@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: paint_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-paint_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paint_password}
+      POSTGRES_DB: ${POSTGRES_DB:-paint_catalog}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - paint_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-paint_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # CRUD API Service
+  crud-api:
+    build:
+      context: ./crud-api
+      dockerfile: Dockerfile
+    container_name: paint_crud_api
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-paint_user}:${POSTGRES_PASSWORD:-paint_password}@postgres:5432/${POSTGRES_DB:-paint_catalog}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - paint_network
+    volumes:
+      - ./crud-api:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: paint_ai_service
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CRUD_API_URL=http://crud-api:8000
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    ports:
+      - "8001:8001"
+    depends_on:
+      - crud-api
+    networks:
+      - paint_network
+    volumes:
+      - ./ai-service:/app
+      - ai_vectorstore:/app/vectorstore
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+volumes:
+  postgres_data:
+  ai_vectorstore:
+
+networks:
+  paint_network:
+    driver: bridge
