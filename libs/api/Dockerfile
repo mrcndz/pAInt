@@ -16,14 +16,14 @@ WORKDIR /app
 
 # Copy shared package first
 COPY libs/shared /shared
-COPY libs/crud-api/pyproject.toml .
+COPY libs/api/pyproject.toml .
 
 # Install shared package and dependencies
 RUN pip install --no-cache-dir -e /shared
 RUN pip install --no-cache-dir -e .
 
 # Copy application code
-COPY libs/crud-api .
+COPY libs/api .
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && \
