@@ -5,13 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-
-class Environment(str, Enum):
-    """Paint environment options."""
-
-    INTERNAL = "internal"
-    EXTERNAL = "external"
-    BOTH = "both"
+from ..core.entities import Environment
 
 
 class PaintProductBase(BaseModel):
@@ -75,4 +69,3 @@ class PaintProductFilters(BaseModel):
     name: Optional[str] = None
     min_price: Optional[Decimal] = Field(None, ge=0)
     max_price: Optional[Decimal] = Field(None, ge=0)
-

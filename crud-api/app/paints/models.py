@@ -1,5 +1,9 @@
-from sqlalchemy import ARRAY, DECIMAL, TIMESTAMP, Column, Integer, String, Text
-from sqlalchemy.sql import func
+from datetime import datetime
+from decimal import Decimal
+from typing import List, Optional
+
+from sqlalchemy import ARRAY, DECIMAL, TIMESTAMP, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from ..core.database import Base
 
@@ -9,23 +13,24 @@ class PaintProductModel(Base):
 
     __tablename__ = "paint_products"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, index=True)
-    color = Column(String(100), nullable=False, index=True)
-    surface_types = Column(ARRAY(Text), nullable=False, default=[])
-    environment = Column(String(50), nullable=False, index=True)
-    finish_type = Column(String(50), nullable=False, index=True)
-    features = Column(ARRAY(Text), default=[])
-    product_line = Column(String(100), nullable=False, index=True)
-    price = Column(DECIMAL(10, 2))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
+    color: Mapped[str] = mapped_column(String(100), index=True)
+    surface_types: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
+    environment: Mapped[str] = mapped_column(String(50), index=True)
+    finish_type: Mapped[str] = mapped_column(String(50), index=True)
+    features: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
+    product_line: Mapped[str] = mapped_column(String(100), index=True)
+    price: Mapped[Optional[Decimal]] = mapped_column(DECIMAL(10, 2))
 
     # AI-enriched fields
-    ai_summary = Column(Text)
-    usage_tags = Column(ARRAY(Text), default=[])
+    ai_summary: Mapped[Optional[str]] = mapped_column(Text)
+    usage_tags: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
 
     # Metadata
-    created_at = Column(TIMESTAMP, default=func.current_timestamp())
-    updated_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP, default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
-
