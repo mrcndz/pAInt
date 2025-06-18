@@ -1,0 +1,9 @@
+{
+  "pythonPath": "python",
+  "extraPaths": [
+    "./libs"
+  ],
+  "include": [
+    "libs/**"
+  ]
+}
