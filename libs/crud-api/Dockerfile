@@ -14,12 +14,16 @@ RUN apt-get update && apt-get install -y \
 # Set work directory
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy shared package first
+COPY libs/shared /shared
+COPY libs/crud-api/pyproject.toml .
+
+# Install shared package and dependencies
+RUN pip install --no-cache-dir -e /shared
+RUN pip install --no-cache-dir -e .
 
 # Copy application code
-COPY . .
+COPY libs/crud-api .
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && \

@@ -3,9 +3,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.database import get_async_db
-from ..core.security import get_auth_use_cases, get_current_user
 from ..core.entities import User
+from ..core.security import get_auth_use_cases, get_current_user
 from .schemas import LoginRequest, Token, UserCreate, UserResponse
 from .services import AuthUseCases
 

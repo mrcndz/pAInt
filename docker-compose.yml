@@ -25,8 +25,8 @@ services:
   # CRUD API Service
   crud-api:
     build:
-      context: ./crud-api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./libs/crud-api/Dockerfile
     container_name: paint_crud_api
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-paint_user}:${POSTGRES_PASSWORD:-paint_password}@postgres:5432/${POSTGRES_DB:-paint_catalog}
@@ -40,27 +40,31 @@ services:
     networks:
       - paint_network
     volumes:
-      - ./crud-api:/app
+      - ./libs/crud-api:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   # AI Service
   ai-service:
     build:
-      context: ./ai-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./libs/ai-service/Dockerfile
     container_name: paint_ai_service
     environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-paint_user}:${POSTGRES_PASSWORD:-paint_password}@postgres:5432/${POSTGRES_DB:-paint_catalog}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-3.5-turbo
       - CRUD_API_URL=http://crud-api:8000
       - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DEBUG=true
     ports:
       - "8001:8001"
     depends_on:
-      - crud-api
+      postgres:
+        condition: service_healthy
     networks:
       - paint_network
     volumes:
-      - ./ai-service:/app
+      - ./libs/ai-service:/app
       - ai_vectorstore:/app/vectorstore
     command: python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 

@@ -3,10 +3,10 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from shared.database import get_async_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.services import AuthUseCases
-from .database import get_async_db
 from .entities import User
 from .repositories import SQLAlchemyUserRepository
 
