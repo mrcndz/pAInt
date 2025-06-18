@@ -19,7 +19,7 @@ include = ["libs"]
 extraPaths = ["libs"]
 
 [project.scripts]
-paint-crud = "crud_api.app.main:app"
+paint-crud = "api.app.main:app"
 paint-ai = "ai_service.main:app"
 
 [tool.black]
