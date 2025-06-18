@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paint-ai-service"
+version = "0.1.0"
+description = "AI service for paint recommendations using LangChain"
+authors = [{name = "mrcndz"}]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "openai>=1.6.1,<2.0.0",
+    "langchain>=0.0.340",
+    "langchain-openai>=0.0.2",
+    "faiss-cpu>=1.7.4",
+    "psycopg2-binary>=2.9.0",
+    "sqlalchemy>=2.0.0",
+    "pydantic>=2.5.0",
+    "python-multipart>=0.0.6",
+    "shared",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.10.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
