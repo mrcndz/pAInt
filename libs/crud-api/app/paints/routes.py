@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from shared.database import get_async_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.database import get_async_db
 from ..core.entities import User
 from ..core.repositories import SQLAlchemyPaintProductRepository
 from ..core.security import get_current_user, get_optional_current_user, require_admin
