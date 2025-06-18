@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "paint-crud-api"
+name = "paint-api"
 version = "0.1.0"
-description = "CRUD API service for paint catalog management"
+description = "API service for paint catalog management"
 authors = [{name = "mrcndz"}]
 dependencies = [
     "fastapi>=0.104.0",
@@ -28,4 +28,4 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*"]
+include = ["*"]
