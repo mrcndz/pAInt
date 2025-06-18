@@ -3,15 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from sqlalchemy import (
-    ARRAY,
-    DECIMAL,
-    TIMESTAMP,
-    ForeignKey,
-    String,
-    Text,
-    func,
-)
+from sqlalchemy import ARRAY, DECIMAL, TIMESTAMP, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,7 +20,9 @@ class UserModel(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(20), default="user")
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP, default=func.current_timestamp())
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP, default=func.current_timestamp()
+    )
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
@@ -59,7 +53,9 @@ class PaintProductModel(Base):
     usage_tags: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
 
     # Metadata
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP, default=func.current_timestamp())
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP, default=func.current_timestamp()
+    )
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
@@ -70,11 +66,17 @@ class ChatSessionModel(Base):
 
     __tablename__ = "chat_sessions"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     session_data: Mapped[dict] = mapped_column(JSONB, default=dict)
-    last_activity: Mapped[datetime] = mapped_column(TIMESTAMP, default=func.current_timestamp())
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP, default=func.current_timestamp())
+    last_activity: Mapped[datetime] = mapped_column(
+        TIMESTAMP, default=func.current_timestamp()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP, default=func.current_timestamp()
+    )
 
     # Relationships
     user: Mapped["UserModel"] = relationship(back_populates="chat_sessions")

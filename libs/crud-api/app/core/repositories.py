@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Optional
 
+from shared.models import ChatSessionModel, PaintProductModel, UserModel
 from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from .entities import ChatSession, Environment, PaintProduct, Role, User
-from .models import ChatSessionModel, PaintProductModel, UserModel
 from .repositories_interfaces import (
     ChatSessionRepository,
     PaintProductRepository,
