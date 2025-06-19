@@ -1,13 +1,14 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from config import config
 from langchain_openai import OpenAIEmbeddings
 from pgvector.sqlalchemy import Vector
 from shared.database import get_db
 from shared.models import PaintProductModel as PaintProduct
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+from ..config import config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -236,9 +237,7 @@ class PaintVectorStorePG:
 
                 if features:
                     for feature in features:
-                        sql_query = sql_query.filter(
-                            PaintProduct.features.any(feature)
-                        )
+                        sql_query = sql_query.filter(PaintProduct.features.any(feature))
 
                 if surface_types:
                     for surface_type in surface_types:

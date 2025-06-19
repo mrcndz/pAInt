@@ -1,7 +1,6 @@
 import logging
 from typing import List, Optional
 
-from config import config
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import SystemMessage
@@ -9,7 +8,9 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
-from rag.vector_store_pg import get_vector_store
+
+from ..config import config
+from ..rag.vector_store_pg import get_vector_store
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
