@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from sqlalchemy import ARRAY, DECIMAL, TIMESTAMP, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -51,6 +52,9 @@ class PaintProductModel(Base):
     # AI-enriched fields
     ai_summary: Mapped[Optional[str]] = mapped_column(Text)
     usage_tags: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
+    
+    # Vector embedding for semantic search (1536 dimensions for OpenAI ada-002)
+    embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(1536))
 
     # Metadata
     created_at: Mapped[datetime] = mapped_column(
