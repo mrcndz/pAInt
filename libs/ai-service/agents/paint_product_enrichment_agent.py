@@ -47,12 +47,12 @@ class PaintProductEnricher:
             - Product Line: {paint_data['product_line']}
 
             INSTRUCTIONS:
-            1.  **Summary:** Write in Portuguese (Brazil), focusing on practical benefits, aesthetic appeal, and special features.
-            2.  **Tags:** Generate 3-5 relevant tags from the following categories:
-                -   Room types: living-room, bedroom, kitchen, bathroom, office, kids-room
-                -   Style: modern, classic, minimalist, rustic, elegant, cozy, bold
-                -   Usage: high-traffic, low-maintenance, family-friendly, professional, luxury
-                -   Features: durable, easy-clean, weather-resistant, eco-friendly, quick-dry
+            1.  **Summary:** Write in Portuguese (Brazilian), focusing on practical benefits, aesthetic appeal, and special features.
+            2.  **Tags:** Generate 3-5 relevant tags in Portuguese (Brazilian) from the following categories:
+                -   Room types: sala de estar, quarto, cozinha, banheiro, escritório, quarto infantil
+                -   Style: moderno, clássico, minimalista, rústico, elegante, aconchegante, vibrante
+                -   Usage: alto tráfego, baixa manutenção, família, profissional, luxo
+                -   Features: durável, fácil limpeza, resistente ao tempo, ecológico, secagem rápida
         """
 
     def enrich_product(self, product: PaintProduct) -> Dict[str, Any]:
