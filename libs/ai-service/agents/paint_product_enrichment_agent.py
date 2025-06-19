@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 class EnrichedContent(BaseModel):
     summary: str = Field(
-        description="Sumário de 2-3 sentenças em português (Brasil) sobre o produto."
+        description="Summary of 2-3 sentences in Portuguese (Brazil) about the product."
     )
-    tags: List[str] = Field(description="Lista de 3 a 5 tags de uso relevantes.")
+    tags: List[str] = Field(description="List of 3 to 5 relevant usage tags.")
 
 
 class PaintProductEnricher:
