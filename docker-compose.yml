@@ -30,7 +30,7 @@ services:
     container_name: paint_api
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-paint_user}:${POSTGRES_PASSWORD:-paint_password}@postgres:5432/${POSTGRES_DB:-paint_catalog}
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-jwt-key}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     ports:
       - "8000:8000"
