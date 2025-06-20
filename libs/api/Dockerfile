@@ -14,20 +14,15 @@ RUN apt-get update && apt-get install -y \
 # Set work directory
 WORKDIR /app
 
-# Copy shared package first
-COPY libs/shared /shared
-COPY libs/api/pyproject.toml .
-
-# Install shared package and dependencies
-RUN pip install --no-cache-dir -e /shared
+# Install dependencies
 RUN pip install --no-cache-dir -e .
-
-# Copy application code
-COPY libs/api .
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
+
+RUN chown -R appuser:appuser /app/shared
+
 USER appuser
 
 # Expose port
