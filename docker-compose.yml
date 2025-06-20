@@ -41,7 +41,8 @@ services:
       - paint_network
     volumes:
        - ./libs/api:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+       - ./libs/shared:/app/shared
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   # AI Service
   ai-service:
