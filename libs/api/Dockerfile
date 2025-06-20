@@ -5,14 +5,20 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
+WORKDIR /app
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set work directory
-WORKDIR /app
+
+# Copy pyproject.toml first
+COPY libs/ai_service/pyproject.toml .
+COPY libs/shared app/libs/shared
+
+RUN pip install -e app/libs/shared
 
 # Install dependencies
 RUN pip install --no-cache-dir -e .
@@ -20,8 +26,6 @@ RUN pip install --no-cache-dir -e .
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
-
-RUN chown -R appuser:appuser /app/shared
 
 USER appuser
 
