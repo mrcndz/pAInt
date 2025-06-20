@@ -40,14 +40,14 @@ services:
     networks:
       - paint_network
     volumes:
-      - ./libs/api:/app
+       - ./libs/api:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   # AI Service
   ai-service:
     build:
       context: .
-      dockerfile: ./libs/ai-service/Dockerfile
+      dockerfile: ./libs/ai_service/Dockerfile
     container_name: paint_ai_service
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-paint_user}:${POSTGRES_PASSWORD:-paint_password}@postgres:5432/${POSTGRES_DB:-paint_catalog}
@@ -56,6 +56,7 @@ services:
       - API_URL=http://api:8000
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - DEBUG=true
+      - PROJECT_URL=/app
     ports:
       - "8001:8001"
     depends_on:
@@ -64,9 +65,10 @@ services:
     networks:
       - paint_network
     volumes:
-      - ./libs/ai-service:/app
+      - ./libs/ai_service:/app
+      - ./libs/shared:/app/shared
       - ai_vectorstore:/app/vectorstore
-    command: python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 volumes:
   postgres_data:
