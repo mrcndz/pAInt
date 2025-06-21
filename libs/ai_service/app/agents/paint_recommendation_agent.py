@@ -173,7 +173,9 @@ class PaintRecommendationAgent:
                 memory=memory,
                 verbose=True,
                 handle_parsing_errors=True,
-                max_iterations=3,
+                max_iterations=6,
+                max_execution_time=30,
+                early_stopping_method="generate",  # Stop and generate response if max iterations reached
             )
 
             # Execute the agent
@@ -191,6 +193,23 @@ class PaintRecommendationAgent:
 
         except Exception as e:
             logger.error(f"Error in get_recommendation: {e}")
+
+            # Handle specific max iterations error
+            if "max iterations" in str(e).lower() or "agent stopped" in str(e).lower():
+                # Still save conversation if we have valid memory
+                try:
+                    self.conversation_manager.save_session_to_database(
+                        session_uuid, user_id, memory
+                    )
+                except:
+                    pass
+
+                return (
+                    "Desculpe, sua pergunta requer uma análise mais complexa do que posso processar no momento. "
+                    "Pode reformular sua pergunta de forma mais específica? Por exemplo: 'Quero tinta azul para quarto' "
+                    "ou 'Preciso de tinta lavável para cozinha'."
+                )
+
             return f"Desculpe, ocorreu um erro ao processar sua solicitação. Erro: {str(e)}"
 
     def _search_paints_tool(self, query: str, limit: int = 5) -> str:
@@ -306,4 +325,3 @@ def create_session_recommendation_agent(
 ) -> PaintRecommendationAgent:
     """Factory function to create a session-aware paint agent"""
     return PaintRecommendationAgent(conversation_manager)
-
