@@ -1,0 +1,594 @@
+{
+  "info": {
+    "name": "pAInt API - Paint Recommendation System",
+    "description": "Complete API collection for testing the pAInt paint recommendation system with conversation persistence",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Auto-set base URLs",
+          "pm.collectionVariables.set('api_base_url', 'http://localhost:8000');",
+          "pm.collectionVariables.set('ai_base_url', 'http://localhost:8001');"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login - Admin User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test response",
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Extract and save token",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    pm.collectionVariables.set('user_id', response.user.id);",
+                  "    pm.collectionVariables.set('username', response.user.username);",
+                  "    ",
+                  "    console.log('Token saved:', response.access_token);",
+                  "    console.log('User ID:', response.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base_url}}/auth/login",
+              "host": ["{{api_base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with admin credentials to get JWT token"
+          }
+        },
+        {
+          "name": "Test Token Validation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Token is valid', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base_url}}/auth/me",
+              "host": ["{{api_base_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Test if the saved token is working correctly by getting current user info"
+          }
+        }
+      ],
+      "description": "Authentication endpoints for login and token validation"
+    },
+    {
+      "name": "AI Recommendations",
+      "item": [
+        {
+          "name": "New Conversation - Bedroom Paint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Recommendation successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Save session UUID for follow-up messages",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('session_uuid', response.session_uuid);",
+                  "    console.log('Session UUID saved:', response.session_uuid);",
+                  "    console.log('AI Response:', response.response);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Preciso de tinta para as paredes do meu quarto. Quero algo tranquilo e relaxante.\",\n  \"session_uuid\": null\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Start a new conversation asking for bedroom paint recommendations"
+          }
+        },
+        {
+          "name": "Follow-up - Premium Option Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Follow-up successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('Follow-up response:', response.response);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Me fale mais sobre a opção premium que você mencionou\",\n  \"session_uuid\": \"{{session_uuid}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Follow-up question about premium paint option using the same session"
+          }
+        },
+        {
+          "name": "Kitchen Paint Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Save as different session for kitchen",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('kitchen_session_uuid', response.session_uuid);",
+                  "    console.log('Kitchen session UUID:', response.session_uuid);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Preciso de tinta para a cozinha. Que seja lavável e resistente à umidade.\",\n  \"session_uuid\": null\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Start a new conversation for kitchen paint (different session)"
+          }
+        },
+        {
+          "name": "External Paint Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Quero pintar a fachada da minha casa. Preciso de tinta para área externa, resistente ao sol e chuva.\",\n  \"session_uuid\": null\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Request for external paint recommendations"
+          }
+        },
+        {
+          "name": "Color Preference Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Que cores você recomenda para uma sala de estar moderna? Quero algo elegante.\",\n  \"session_uuid\": null\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Ask for color recommendations for modern living room"
+          }
+        }
+      ],
+      "description": "AI-powered paint recommendation endpoints with conversation persistence"
+    },
+    {
+      "name": "Session Management",
+      "item": [
+        {
+          "name": "Get User Sessions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Sessions retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('User sessions:', response);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/chat/sessions",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "chat", "sessions"]
+            },
+            "description": "Get all chat sessions for the current user"
+          }
+        },
+        {
+          "name": "Reset Chat Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Session reset successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('Session reset:', response);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_uuid\": \"{{session_uuid}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/chat/reset",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "chat", "reset"]
+            },
+            "description": "Reset a specific chat session (clears conversation memory)"
+          }
+        }
+      ],
+      "description": "Session management endpoints for conversation persistence"
+    },
+    {
+      "name": "Direct Search & Filter",
+      "item": [
+        {
+          "name": "Search Paints - Blue Colors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"azul tranquilo quarto\",\n  \"limit\": 5\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/search",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "search"]
+            },
+            "description": "Direct search for blue paint products"
+          }
+        },
+        {
+          "name": "Filter - Premium Internal Paints",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"environment\": \"internal\",\n  \"product_line\": \"Premium\",\n  \"features\": [\"washable\", \"anti-mold\"],\n  \"limit\": 10\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/filter",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "filter"]
+            },
+            "description": "Filter paints by specific criteria"
+          }
+        }
+      ],
+      "description": "Direct search and filter endpoints (without AI conversation)"
+    },
+    {
+      "name": "System Health",
+      "item": [
+        {
+          "name": "API Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base_url}}/health",
+              "host": ["{{api_base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check API service health status"
+          }
+        },
+        {
+          "name": "AI Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ai_base_url}}/health",
+              "host": ["{{ai_base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check AI service health status"
+          }
+        },
+        {
+          "name": "AI Service Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/status",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "status"]
+            },
+            "description": "Get AI service detailed status"
+          }
+        }
+      ],
+      "description": "Health check endpoints for system monitoring"
+    },
+    {
+      "name": "Conversation Persistence Tests",
+      "item": [
+        {
+          "name": "Test 1: Create Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Save session for persistence test",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('persistence_test_session', response.session_uuid);",
+                  "    console.log('Persistence test session:', response.session_uuid);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Oi! Estou procurando tinta para meu escritório. Preciso de algo que ajude na concentração.\",\n  \"session_uuid\": null\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Start conversation for persistence testing"
+          }
+        },
+        {
+          "name": "Test 2: Continue Conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Interessante! E quanto aos preços que você mencionou?\",\n  \"session_uuid\": \"{{persistence_test_session}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Continue conversation to test memory persistence"
+          }
+        },
+        {
+          "name": "Test 3: Reference Previous Context",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Qual das opções que você sugeriu anteriormente tem melhor custo-benefício?\",\n  \"session_uuid\": \"{{persistence_test_session}}\"\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Test if AI remembers previous recommendations in same session"
+          }
+        }
+      ],
+      "description": "Specific tests for conversation persistence and memory functionality"
+    }
+  ],
+  "variable": [
+    {
+      "key": "api_base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "ai_base_url", 
+      "value": "http://localhost:8001",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "session_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "kitchen_session_uuid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "persistence_test_session",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
