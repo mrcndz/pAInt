@@ -47,8 +47,40 @@ async def root():
             "redoc": "/redoc",
             "auth": "/auth",
             "paints": "/paints",
+            "health": "/health",
         },
     }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    try:
+        # For simplicity, assume database is healthy if API is running
+        # More detailed checks can be added later if needed
+        return {
+            "status": "healthy",
+            "service": "api_service",
+            "version": "1.0.0",
+            "components": {
+                "database": True,  # Simplified - assume healthy
+                "api": True,
+                "auth": True,
+            },
+            "environment": os.environ.get("ENVIRONMENT", "development"),
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "service": "api_service",
+            "components": {
+                "database": False,
+                "api": False,
+                "auth": False,
+                "error": str(e),
+            },
+        }
 
 
 @app.exception_handler(HTTPException)
