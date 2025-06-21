@@ -21,6 +21,19 @@ ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", "24"))
 
 
+def create_access_token(data: dict, expires_delta: Optional[int] = None) -> str:
+    """Create JWT access token for testing and direct use."""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + timedelta(hours=expires_delta)
+    else:
+        expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
 async def get_auth_use_cases(db: AsyncSession = Depends(get_async_db)) -> AuthUseCases:
     """Get authentication use cases."""
     user_repository = SQLAlchemyUserRepository(db)
