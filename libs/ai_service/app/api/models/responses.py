@@ -42,3 +42,20 @@ class ServiceStatusResponse(BaseModel):
     status: str = Field(..., description="Overall service status")
     components: Dict[str, Any] = Field(..., description="Detailed component information")
     capabilities: List[str] = Field(..., description="Service capabilities")
+
+
+class ChatSessionInfo(BaseModel):
+    session_uuid: str = Field(..., description="Unique session identifier")
+    created_at: Optional[str] = Field(None, description="Session creation timestamp")
+    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+    updated_at: Optional[str] = Field(None, description="Last update timestamp")
+    message_count: int = Field(..., description="Number of messages in session")
+    preview: str = Field(..., description="Preview of first user message")
+    is_active: bool = Field(..., description="Whether session is currently active in memory")
+
+
+class UserSessionsResponse(BaseModel):
+    user_id: int = Field(..., description="User identifier")
+    sessions: List[ChatSessionInfo] = Field(..., description="List of user chat sessions")
+    total_sessions: int = Field(..., description="Total number of sessions")
+    message: str = Field(..., description="Response message")

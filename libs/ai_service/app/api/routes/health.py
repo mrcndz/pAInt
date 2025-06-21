@@ -35,7 +35,7 @@ async def health_check(
     """
     try:
         # Check agent status
-        agent_ready = paint_agent.agent_executor is not None
+        agent_ready = paint_agent.llm is not None and paint_agent.tools is not None
         vector_store_ready = vector_store is not None
 
         return HealthResponse(
@@ -80,7 +80,7 @@ async def get_service_status(
     """
     try:
         # Check agent status
-        agent_ready = paint_agent.agent_executor is not None
+        agent_ready = paint_agent.llm is not None and paint_agent.tools is not None
         vector_store_ready = vector_store is not None
 
         return ServiceStatusResponse(

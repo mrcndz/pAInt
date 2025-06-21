@@ -5,9 +5,11 @@ from .requests import (
     SearchRequest,
 )
 from .responses import (
+    ChatSessionInfo,
     ProductResponse,
     RecommendationResponse,
     SearchResponse,
+    UserSessionsResponse,
 )
 
 __all__ = [
@@ -15,7 +17,9 @@ __all__ = [
     "FilterRequest", 
     "RecommendationRequest",
     "SearchRequest",
+    "ChatSessionInfo",
     "ProductResponse",
     "RecommendationResponse", 
     "SearchResponse",
+    "UserSessionsResponse",
 ]
