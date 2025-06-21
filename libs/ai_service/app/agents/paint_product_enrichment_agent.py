@@ -3,11 +3,12 @@ import logging
 import time
 from typing import Any, Dict, List
 
-from config import config
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 from shared.database import get_db
 from shared.models import PaintProductModel as PaintProduct
+
+from ..config import config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
