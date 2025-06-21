@@ -1,8 +1,10 @@
 import os
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import jwt
 from shared.database import get_async_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
