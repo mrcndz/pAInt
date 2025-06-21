@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from ..config import config
 from ..rag.vector_store_pg import get_vector_store
+from ..services.conversation_manager import ConversationManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,24 +58,27 @@ class PaintDetailsArgs(BaseModel):
 
 
 class PaintRecommendationAgent:
-    def __init__(self):
-        """Initialize the Paint Recommendation Agent"""
+    """
+    Session-aware paint recommendation agent that uses ConversationManager
+    for persistent conversation memory across sessions.
+    """
+
+    def __init__(self, conversation_manager: ConversationManager):
+        """Initialize the Session-Aware Paint Recommendation Agent"""
         self.llm = ChatOpenAI(
             api_key=config.OPENAI_API_KEY,
             model=config.OPENAI_MODEL,
             temperature=0.3,  # Lower temperature for more consistent recommendations
         )
 
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True
-        )
-
+        self.conversation_manager = conversation_manager
         self.vector_store = get_vector_store()
-        self._setup_agent()
+        self._setup_tools()
+        self._setup_prompt_template()
 
-    def _setup_agent(self):
-        """Setup the LangChain agent with tools using modern approach"""
-        tools = [
+    def _setup_tools(self):
+        """Setup the tools for the agent"""
+        self.tools = [
             StructuredTool.from_function(
                 name="search_paints",
                 description="Search for paint products based on user requirements like color, room type, or features",
@@ -95,28 +99,39 @@ class PaintRecommendationAgent:
             ),
         ]
 
+    def _setup_prompt_template(self):
+        """Setup the prompt template for the agent"""
         system_prompt = """You are an intelligent paint recommendation assistant for Suvinil paints. 
         You help customers find the perfect paint products based on their needs, preferences, and project requirements.
-        
-        Your capabilities:
-        - Understand customer intent (room type, color preferences, project requirements)
-        - Search for relevant paint products using semantic similarity
-        - Filter products by specific attributes
-        - Provide detailed product information and recommendations
-        - Consider practical factors like environment, durability, and maintenance
-        
+
+        Key Responsibilities:
+        - Understand customer requirements through natural conversation
+        - Search and recommend appropriate paint products using available tools
+        - Provide detailed product information including prices, features, and usage recommendations
+        - Maintain conversation context to provide personalized recommendations
+        - Answer questions in Portuguese (primary) or English as appropriate
+
         Guidelines:
-        - Always be helpful and friendly
+        - Always be helpful, professional, and enthusiastic about paint projects
         - Ask clarifying questions when requirements are unclear
-        - Recommend 2-3 products maximum unless asked for more
-        - Explain why specific products are good matches
-        - Consider both aesthetic and functional requirements
-        - Respond in Portuguese (Brazilian) when the user speaks Portuguese
-        - When recommending products, always include the product_id for future reference
-        - Use the product_id from search/filter results when getting detailed information
+        - Recommend specific products with prices when possible
+        - Consider factors like room type, lighting, usage patterns, and maintenance needs
+        - Explain the reasoning behind your recommendations
+        - Use the search and filter tools effectively to find the best matches
+        - Remember previous conversation context to provide continuous assistance
+
+        Available Product Information:
+        - Suvinil paint products with various colors, finishes, and features
+        - Price information in Brazilian Reais (BRL)
+        - Surface compatibility (walls, ceilings, wood, metal, etc.)
+        - Environmental suitability (internal/external use)
+        - Special features (washable, anti-mold, quick-dry, etc.)
+        - Product lines (Premium, Standard, Economy, Specialty)
+
+        Remember: You have access to search_paints, filter_paints, and get_paint_details tools to help customers find exactly what they need.
         """
 
-        prompt = ChatPromptTemplate.from_messages(
+        self.prompt_template = ChatPromptTemplate.from_messages(
             [
                 SystemMessage(content=system_prompt),
                 MessagesPlaceholder(variable_name="chat_history"),
@@ -125,55 +140,93 @@ class PaintRecommendationAgent:
             ]
         )
 
-        # Create agent
-        agent = create_openai_tools_agent(self.llm, tools, prompt)
+    def get_recommendation(self, message: str, session_uuid: str, user_id: int) -> str:
+        """
+        Get paint recommendation for a specific session.
 
-        # Create AgentExecutor
-        self.agent_executor = AgentExecutor(
-            agent=agent,
-            tools=tools,
-            memory=self.memory,
-            verbose=True,
-            max_iterations=3,
-            return_intermediate_steps=True,
-        )
+        Args:
+            message: User's message/query
+            session_uuid: Session UUID for conversation tracking
+            user_id: User ID for session ownership
 
-    def _search_paints_tool(self, query: str, limit: Optional[int] = 5) -> str:
-        """Search paint products using vector similarity"""
+        Returns:
+            AI-generated recommendation response
+        """
         try:
-            results = self.vector_store.search(query, k=limit or 5)
+            logger.info(
+                f"Processing recommendation for session {session_uuid}, user {user_id}"
+            )
+
+            # Get session-specific memory
+            memory = self.conversation_manager.get_memory_for_session(
+                session_uuid, user_id
+            )
+
+            # Create agent executor with session-specific memory
+            agent_executor = AgentExecutor(
+                agent=create_openai_tools_agent(
+                    llm=self.llm,
+                    tools=self.tools,
+                    prompt=self.prompt_template,
+                ),
+                tools=self.tools,
+                memory=memory,
+                verbose=True,
+                handle_parsing_errors=True,
+                max_iterations=3,
+            )
+
+            # Execute the agent
+            response = agent_executor.invoke({"input": message})
+
+            # Save updated conversation to database
+            self.conversation_manager.save_session_to_database(
+                session_uuid, user_id, memory
+            )
+
+            logger.info(
+                f"Successfully processed recommendation for session {session_uuid}"
+            )
+            return response["output"]
+
+        except Exception as e:
+            logger.error(f"Error in get_recommendation: {e}")
+            return f"Desculpe, ocorreu um erro ao processar sua solicitação. Erro: {str(e)}"
+
+    def _search_paints_tool(self, query: str, limit: int = 5) -> str:
+        """Tool for semantic search of paint products"""
+        try:
+            logger.info(f"Searching paints with query: {query}")
+            results = self.vector_store.search(query=query, k=limit)
 
             if not results:
-                return "No paint products found matching your search criteria."
+                return "Nenhum produto encontrado para essa consulta."
 
             # Format results for the agent
             formatted_results = []
-            for i, product in enumerate(results, 1):
-
-                product_id = (
-                    str(product.get("id"))
-                    or f"paint_{product['name'].lower().replace(' ', '_')}_{product['color'].lower().replace(' ', '_')}"
-                )
-
-                result_text = f"""
-                {i}. {product['name']} - {product['color']}
-                   Product ID: {product_id}
-                   Line: {product['product_line']}
-                   Environment: {product['environment']}
-                   Finish: {product['finish_type']}
-                   Price: R$ {product['price'] if product['price'] else 'N/A'}
-                   Features: {', '.join(product['features']) if product['features'] else 'Standard'}
-                   Summary: {product.get('ai_summary', 'No summary available')}
+            for result in results:
+                product_info = f"""
+                ID: {result['id']}
+                Nome: {result['name']}
+                Cor: {result['color']}
+                Linha: {result['product_line']}
+                Ambiente: {result['environment']}
+                Acabamento: {result['finish_type']}
+                Preço: R$ {result.get('price', 'N/A')}
+                Características: {', '.join(result.get('features', []))}
+                Superfícies: {', '.join(result.get('surface_types', []))}
+                Resumo: {result.get('ai_summary', 'N/A')}
+                Score de relevância: {result.get('relevance_score', 0):.2f}
                 """
-                formatted_results.append(result_text.strip())
+                formatted_results.append(product_info.strip())
 
-            return f"Found {len(results)} matching paint products:\n\n" + "\n\n".join(
+            return f"Encontrados {len(results)} produtos:\n\n" + "\n---\n".join(
                 formatted_results
             )
 
         except Exception as e:
-            logger.error(f"Error in search_paints_tool: {e}")
-            return f"Error searching for paint products: {str(e)}"
+            logger.error(f"Error in search tool: {e}")
+            return f"Erro na busca: {str(e)}"
 
     def _filter_paints_tool(
         self,
@@ -183,156 +236,74 @@ class PaintRecommendationAgent:
         color: Optional[str] = None,
         features: Optional[List[str]] = None,
         surface_types: Optional[List[str]] = None,
-        limit: Optional[int] = 5,
+        limit: int = 5,
     ) -> str:
-        """Filter paint products by attributes with structured arguments"""
+        """Tool for filtering paint products by attributes"""
         try:
-            # Build filters dict from structured arguments
-            filters = {}
+            logger.info(
+                f"Filtering paints with filters: env={environment}, finish={finish_type}, line={product_line}"
+            )
 
+            # Build filter kwargs
+            filter_kwargs = {}
             if environment:
-                filters["environment"] = environment
+                filter_kwargs["environment"] = environment
             if finish_type:
-                filters["finish_type"] = finish_type
+                filter_kwargs["finish_type"] = finish_type
             if product_line:
-                filters["product_line"] = product_line
+                filter_kwargs["product_line"] = product_line
             if color:
-                filters["color"] = color
+                filter_kwargs["color"] = color
             if features:
-                filters["features"] = features
+                filter_kwargs["features"] = features
             if surface_types:
-                filters["surface_types"] = surface_types
+                filter_kwargs["surface_types"] = surface_types
 
-            if not filters:
-                return "No filter criteria provided. Please specify at least one filter parameter."
-
-            results = self.vector_store.search("", **filters)
+            results = self.vector_store.search(query="", k=limit, **filter_kwargs)
 
             if not results:
-                filter_summary = ", ".join([f"{k}: {v}" for k, v in filters.items()])
-                return f"No paint products found with the specified filters: {filter_summary}"
+                return "Nenhum produto encontrado com os filtros especificados."
 
-            # Format results with product_id for future reference
+            # Format results
             formatted_results = []
-            for i, product in enumerate(results[: limit or 5], 1):
-                product_id = (
-                    str(product.get("id"))
-                    or f"paint_{product['name'].lower().replace(' ', '_')}_{product['color'].lower().replace(' ', '_')}"
-                )
-
-                result_text = f"""
-                {i}. {product['name']} - {product['color']}
-                   Product ID: {product_id}
-                   Line: {product['product_line']}
-                   Environment: {product['environment']}
-                   Finish: {product['finish_type']}
-                   Price: R$ {product['price'] if product['price'] else 'N/A'}
-                   Features: {', '.join(product['features']) if product['features'] else 'Standard'}
+            for result in results:
+                product_info = f"""
+                ID: {result['id']}
+                Nome: {result['name']}
+                Cor: {result['color']}
+                Linha: {result['product_line']}
+                Ambiente: {result['environment']}
+                Acabamento: {result['finish_type']}
+                Preço: R$ {result.get('price', 'N/A')}
+                Características: {', '.join(result.get('features', []))}
+                Superfícies: {', '.join(result.get('surface_types', []))}
                 """
-                formatted_results.append(result_text.strip())
+                formatted_results.append(product_info.strip())
 
-            filter_summary = ", ".join([f"{k}: {v}" for k, v in filters.items()])
             return (
-                f"Found {len(results)} products matching filters ({filter_summary}):\n\n"
-                + "\n\n".join(formatted_results)
+                f"Encontrados {len(results)} produtos com os filtros aplicados:\n\n"
+                + "\n---\n".join(formatted_results)
             )
 
         except Exception as e:
-            logger.error(f"Error in filter_paints_tool: {e}")
-            return f"Error filtering paint products: {str(e)}"
+            logger.error(f"Error in filter tool: {e}")
+            return f"Erro no filtro: {str(e)}"
 
     def _get_paint_details_tool(self, product_id: str) -> str:
-        """Tool for getting detailed information about a specific paint using product ID"""
+        """Tool for getting detailed information about a specific paint product"""
         try:
-            from shared.database import get_db
-            from shared.models import PaintProductModel as PaintProduct
-
-            db = next(get_db())
-
-            try:
-                # Try to find by id first
-                try:
-                    product = (
-                        db.query(PaintProduct)
-                        .filter(PaintProduct.id == int(product_id))
-                        .first()
-                    )
-                except ValueError:
-                    product = None
-
-                if not product and product_id.startswith("paint_"):
-                    # Try to extract name and color from pattern
-                    parts = (
-                        product_id.replace("paint_", "").replace("_", " ").split(" ")
-                    )
-                    if len(parts) >= 2:
-                        # Search for products matching the pattern
-                        products = db.query(PaintProduct).all()
-                        for p in products:
-                            reconstructed_id = f"paint_{p.name.lower().replace(' ', '_')}_{p.color.lower().replace(' ', '_')}"
-                            if reconstructed_id == product_id:
-                                product = p
-                                break
-
-                if not product:
-                    return f"Could not find product with ID: {product_id}. Please ensure you're using the correct product_id from search or filter results."
-
-                # Format detailed product information
-                details = f"""
-                Detailed Information for {product.name}:
-                
-                Product ID: {product.id}
-                Color: {product.color}
-                Product Line: {product.product_line}
-                Environment: {product.environment}
-                Finish Type: {product.finish_type}
-                Price: R$ {product.price if product.price else 'N/A'}
-                
-                Surface Types: {', '.join(product.surface_types) if product.surface_types else 'Standard surfaces'}
-                Special Features: {', '.join(product.features) if product.features else 'Standard paint features'}
-                Usage Tags: {', '.join(product.usage_tags) if product.usage_tags else 'General use'}
-                
-                AI Summary: {product.ai_summary or 'No detailed summary available'}
-                
-                Recommendation Notes:
-                - Best suited for {product.environment} use
-                - {product.finish_type.capitalize()} finish provides {'durability and easy cleaning' if 'washable' in (product.features or []) else 'excellent coverage'}
-                - Compatible with: {', '.join(product.surface_types) if product.surface_types else 'most standard surfaces'}
-                """
-
-                return details.strip()
-
-            finally:
-                db.close()
-
+            logger.info(f"Getting details for product ID: {product_id}")
+            # Implementation would get product by ID from vector store
+            # For now, return a placeholder
+            return f"Detalhes do produto ID {product_id} serão implementados em breve."
         except Exception as e:
-            logger.error(f"Error in get_paint_details_tool: {e}")
-            return (
-                f"Error getting paint details for product_id '{product_id}': {str(e)}"
-            )
-
-    def get_recommendation(self, user_query: str) -> str:
-        """Get paint recommendation based on user query"""
-        try:
-            result = self.agent_executor.invoke({"input": user_query})
-            return result["output"]
-
-        except Exception as e:
-            logger.error(f"Error getting recommendation: {e}")
-            return (
-                f"Sorry, I encountered an error while processing your request: {str(e)}"
-            )
-
-    def reset_conversation(self):
-        """Reset the conversation memory"""
-        self.memory.clear()
-        logger.info("Conversation memory reset")
+            logger.error(f"Error getting product details: {e}")
+            return f"Erro ao obter detalhes do produto: {str(e)}"
 
 
-# Global agent instance
-paint_agent = PaintRecommendationAgent()
+def create_session_recommendation_agent(
+    conversation_manager: ConversationManager,
+) -> PaintRecommendationAgent:
+    """Factory function to create a session-aware paint agent"""
+    return PaintRecommendationAgent(conversation_manager)
 
-
-def get_paint_agent() -> PaintRecommendationAgent:
-    """Get the global paint recommendation agent"""
-    return paint_agent

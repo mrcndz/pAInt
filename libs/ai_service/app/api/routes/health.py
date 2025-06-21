@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from ...config import config
-from ..dependencies import get_recommendation_agent, get_vector_store_instance
+from ..dependencies import get_session_aware_agent, get_vector_store_instance
 from ..models.responses import HealthResponse, ServiceStatusResponse
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ async def root():
 
 @router.get("/health", response_model=HealthResponse, summary="Health check")
 async def health_check(
-    paint_agent=Depends(get_recommendation_agent),
+    paint_agent=Depends(get_session_aware_agent),
     vector_store=Depends(get_vector_store_instance),
 ):
     """
@@ -67,7 +67,7 @@ async def health_check(
     summary="Detailed service status",
 )
 async def get_service_status(
-    paint_agent=Depends(get_recommendation_agent),
+    paint_agent=Depends(get_session_aware_agent),
     vector_store=Depends(get_vector_store_instance),
 ):
     """

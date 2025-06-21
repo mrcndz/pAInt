@@ -22,6 +22,7 @@ dependencies = [
     "uvicorn==0.34.3",
     "asyncpg",
     "psycopg2",
+    "PyJWT>=2.8.0",
     "shared",
 ]
 

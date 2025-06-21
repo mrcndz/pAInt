@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class RecommendationRequest(BaseModel):
     message: str = Field(..., description="Natural language query for paint recommendations")
-    session_id: Optional[str] = Field(None, description="Optional session ID for conversation tracking")
+    session_uuid: Optional[str] = Field(None, description="Optional session UUID for conversation tracking")
 
 
 class SearchRequest(BaseModel):
