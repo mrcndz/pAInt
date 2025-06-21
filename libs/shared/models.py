@@ -73,6 +73,9 @@ class ChatSessionModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    session_uuid: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), unique=True, index=True, default=uuid.uuid4
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     session_data: Mapped[dict] = mapped_column(JSONB, default=dict)
     last_activity: Mapped[datetime] = mapped_column(
@@ -80,6 +83,9 @@ class ChatSessionModel(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP, default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp()
     )
 
     # Relationships

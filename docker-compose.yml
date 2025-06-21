@@ -55,6 +55,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=gpt-3.5-turbo
       - API_URL=http://api:8000
+      - JWT_SECRET=${JWT_SECRET:-super-secret-jwt-key}
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - DEBUG=true
       - PROJECT_URL=/app

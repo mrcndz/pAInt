@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class RecommendationResponse(BaseModel):
     response: str = Field(..., description="AI-generated recommendation response")
-    session_id: Optional[str] = Field(None, description="Session ID for conversation tracking")
+    session_uuid: str = Field(..., description="Session UUID for conversation tracking")
 
 
 class ProductResponse(BaseModel):
