@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ...auth.dependencies import get_current_user_id
 from ..dependencies import get_conversation_manager_instance, get_session_aware_agent
-from ..models import RecommendationRequest, RecommendationResponse
+from ..models import RecommendationRequest, RecommendationResponse, UserSessionsResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -108,7 +108,7 @@ async def reset_chat_session(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/chat/sessions", summary="Get user's chat sessions")
+@router.get("/chat/sessions", response_model=UserSessionsResponse, summary="Get user's chat sessions")
 async def get_user_sessions(
     user_id: int = Depends(get_current_user_id),
 ):
@@ -127,11 +127,14 @@ async def get_user_sessions(
     users to continue previous conversations.
     """
     try:
-        # This would be implemented to query user's sessions from database
-        # For now, return a placeholder
+        conversation_manager = get_conversation_manager_instance()
+        sessions = conversation_manager.get_user_sessions(user_id, limit=50)
+        
         return {
-            "message": "Get user sessions endpoint - to be implemented",
             "user_id": user_id,
+            "sessions": sessions,
+            "total_sessions": len(sessions),
+            "message": f"Retrieved {len(sessions)} chat sessions for user {user_id}"
         }
     except Exception as e:
         logger.error(f"Error getting user sessions: {e}")
