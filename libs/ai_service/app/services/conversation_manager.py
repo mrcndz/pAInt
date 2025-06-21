@@ -266,17 +266,18 @@ class ConversationManager:
     def get_user_sessions(self, user_id: int, limit: int = 50) -> List[dict]:
         """
         Get all chat sessions for a specific user.
-        
+
         Args:
             user_id: User ID to get sessions for
             limit: Maximum number of sessions to return
-            
+
         Returns:
             List of session dictionaries with metadata
         """
+        db_session = next(get_db())
+
         try:
-            db_session = next(get_db())
-            
+
             # Query user's sessions ordered by last activity (most recent first)
             sessions = (
                 db_session.query(ChatSessionModel)
@@ -285,35 +286,46 @@ class ConversationManager:
                 .limit(limit)
                 .all()
             )
-            
+
             session_list = []
             for session in sessions:
                 # Count messages in session data
                 session_data = session.session_data or {}
                 messages = session_data.get("messages", [])
                 message_count = len(messages)
-                
+
                 # Get first user message as preview
                 preview = "No messages"
                 for msg in messages:
                     if msg.get("type") == "human" and msg.get("content"):
-                        preview = msg["content"][:100] + ("..." if len(msg["content"]) > 100 else "")
+                        preview = msg["content"][:100] + (
+                            "..." if len(msg["content"]) > 100 else ""
+                        )
                         break
-                
+
                 session_info = {
                     "session_uuid": str(session.session_uuid),
-                    "created_at": session.created_at.isoformat() if session.created_at else None,
-                    "last_activity": session.last_activity.isoformat() if session.last_activity else None,
-                    "updated_at": session.updated_at.isoformat() if session.updated_at else None,
+                    "created_at": (
+                        session.created_at.isoformat() if session.created_at else None
+                    ),
+                    "last_activity": (
+                        session.last_activity.isoformat()
+                        if session.last_activity
+                        else None
+                    ),
+                    "updated_at": (
+                        session.updated_at.isoformat() if session.updated_at else None
+                    ),
                     "message_count": message_count,
                     "preview": preview,
-                    "is_active": str(session.session_uuid) in [key[0] for key in self._session_cache.keys()]
+                    "is_active": str(session.session_uuid)
+                    in [key[0] for key in self._session_cache.keys()],
                 }
                 session_list.append(session_info)
-            
+
             logger.info(f"Retrieved {len(session_list)} sessions for user {user_id}")
             return session_list
-            
+
         except Exception as e:
             logger.error(f"Error getting user sessions: {e}")
             raise e

@@ -237,12 +237,14 @@ class PaintVectorStorePG:
 
                 if features:
                     for feature in features:
-                        sql_query = sql_query.filter(PaintProduct.features.any(feature))
+                        sql_query = sql_query.filter(
+                            PaintProduct.features.contains([feature])
+                        )
 
                 if surface_types:
                     for surface_type in surface_types:
                         sql_query = sql_query.filter(
-                            PaintProduct.surface_types.any(surface_type)
+                            PaintProduct.surface_types.contains([surface_type])
                         )
 
                 products = sql_query.limit(k).all()

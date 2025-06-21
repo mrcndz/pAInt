@@ -152,14 +152,12 @@ class PaintRecommendationAgent:
         Returns:
             AI-generated recommendation response
         """
+        # Get session-specific memory
+        memory = self.conversation_manager.get_memory_for_session(session_uuid, user_id)
+
         try:
             logger.info(
                 f"Processing recommendation for session {session_uuid}, user {user_id}"
-            )
-
-            # Get session-specific memory
-            memory = self.conversation_manager.get_memory_for_session(
-                session_uuid, user_id
             )
 
             # Create agent executor with session-specific memory
