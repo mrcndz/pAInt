@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 
 
 # Copy pyproject.toml first
-COPY libs/ai_service/pyproject.toml .
+COPY libs/api/pyproject.toml .
 COPY libs/shared app/libs/shared
 
 RUN pip install -e app/libs/shared
