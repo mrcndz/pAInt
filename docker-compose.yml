@@ -53,12 +53,19 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-paint_user}:${POSTGRES_PASSWORD:-paint_password}@postgres:5432/${POSTGRES_DB:-paint_catalog}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_MODEL=gpt-3.5-turbo
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-ada-002}
+      - MAX_TOKENS=${MAX_TOKENS:-150}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
       - API_URL=http://api:8000
       - JWT_SECRET=${JWT_SECRET:-super-secret-jwt-key}
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - DEBUG=true
       - PROJECT_URL=/app
+      - AGENT_MAX_ITERATIONS=${AGENT_MAX_ITERATIONS:-2}
+      - AGENT_MAX_EXECUTION_TIME=${AGENT_MAX_EXECUTION_TIME:-3}
+      - CONVERSATION_MAX_CACHE_SIZE=${CONVERSATION_MAX_CACHE_SIZE:-100}
+      - CONVERSATION_MAX_USER_SESSIONS=${CONVERSATION_MAX_USER_SESSIONS:-50}
     ports:
       - "8001:8001"
     depends_on:

@@ -9,6 +9,8 @@ from shared.database import get_db
 from shared.models import ChatSessionModel
 from sqlalchemy.orm import Session
 
+from ..config.config import config
+
 logger = logging.getLogger(__name__)
 
 
@@ -263,7 +265,7 @@ class ConversationManager:
         """Get current cache size for monitoring."""
         return len(self._session_cache)
 
-    def get_user_sessions(self, user_id: int, limit: int = 50) -> List[dict]:
+    def get_user_sessions(self, user_id: int, limit: Optional[int] = None) -> List[dict]:
         """
         Get all chat sessions for a specific user.
 
@@ -274,6 +276,10 @@ class ConversationManager:
         Returns:
             List of session dictionaries with metadata
         """
+        # Use config default if no limit provided
+        if limit is None:
+            limit = config.CONVERSATION_MAX_USER_SESSIONS
+            
         db_session = next(get_db())
 
         try:
@@ -332,13 +338,17 @@ class ConversationManager:
         finally:
             db_session.close()
 
-    def cleanup_inactive_sessions(self, max_cache_size: int = 100) -> None:
+    def cleanup_inactive_sessions(self, max_cache_size: Optional[int] = None) -> None:
         """
         Clean up cache if it gets too large removing oldest entries.
 
         Args:
             max_cache_size: Maximum number of sessions to keep in cache
         """
+        # Use config default if no max_cache_size provided
+        if max_cache_size is None:
+            max_cache_size = config.CONVERSATION_MAX_CACHE_SIZE
+            
         if len(self._session_cache) > max_cache_size:
             # Remove oldest sessions (simple cleanup strategy)
             sessions_to_remove = len(self._session_cache) - max_cache_size

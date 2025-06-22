@@ -171,8 +171,8 @@ class PaintRecommendationAgent:
                 memory=memory,
                 verbose=True,
                 handle_parsing_errors=True,
-                max_iterations=6,
-                max_execution_time=30,
+                max_iterations=config.AGENT_MAX_ITERATIONS,
+                max_execution_time=config.AGENT_MAX_EXECUTION_TIME,
                 early_stopping_method="generate",  # Stop and generate response if max iterations reached
             )
 
