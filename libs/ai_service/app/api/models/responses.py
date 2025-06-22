@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class RecommendationResponse(BaseModel):
     response: str = Field(..., description="AI-generated recommendation response")
     session_uuid: str = Field(..., description="Session UUID for conversation tracking")
+    image_data: Optional[str] = Field(None, description="Base64 encoded image if paint simulation was performed")
 
 
 class ProductResponse(BaseModel):

@@ -24,6 +24,8 @@ dependencies = [
     "psycopg2",
     "PyJWT>=2.8.0",
     "shared",
+    "opencv-python-headless>=4.8.0",
+    "python-multipart>=0.0.6",
 ]
 
 [project.optional-dependencies]

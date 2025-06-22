@@ -1,3 +1,4 @@
+import base64
 import logging
 from typing import List, Optional
 
@@ -12,6 +13,7 @@ from pydantic import BaseModel, Field
 from ..config import config
 from ..rag.vector_store_pg import get_vector_store
 from ..services.conversation_manager import ConversationManager
+from ..services.inpainting_service import simulate_paint_on_image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,6 +59,15 @@ class PaintDetailsArgs(BaseModel):
     product_id: str = Field(description="Unique product identifier for the paint")
 
 
+class PaintSimulationArgs(BaseModel):
+    image_base64: str = Field(
+        description="Use 'USER_IMAGE' to reference the uploaded image"
+    )
+    paint_description: str = Field(
+        description="Description of the paint color/product to simulate"
+    )
+
+
 class PaintRecommendationAgent:
     """
     Session-aware paint recommendation agent that uses ConversationManager
@@ -73,6 +84,7 @@ class PaintRecommendationAgent:
 
         self.conversation_manager = conversation_manager
         self.vector_store = get_vector_store()
+        self.current_image_data = None  # Store image data for the session
         self._setup_tools()
         self._setup_prompt_template()
 
@@ -97,6 +109,12 @@ class PaintRecommendationAgent:
                 func=self._get_paint_details_tool,
                 args_schema=PaintDetailsArgs,
             ),
+            StructuredTool.from_function(
+                name="simulate_paint",
+                description="Simulate a paint color on the user's uploaded image. Use this when the user has uploaded an image and wants to see how a specific paint would look on it. Always use 'USER_IMAGE' as the image_base64 parameter - the system will automatically use the uploaded image.",
+                func=self._simulate_paint_tool,
+                args_schema=PaintSimulationArgs,
+            ),
         ]
 
     def _setup_prompt_template(self):
@@ -119,6 +137,9 @@ class PaintRecommendationAgent:
         - Explain the reasoning behind your recommendations
         - Use the search and filter tools effectively to find the best matches
         - Remember previous conversation context to provide continuous assistance
+        - When users provide images, use the simulate_paint tool to show them how recommended paints would look
+        - Only use paint simulation when both an image and a specific paint color/product are available
+        - The image data is stored separately and accessed via tools - never include actual image data in conversations
 
         Available Product Information:
         - Suvinil paint products with various colors, finishes, and features
@@ -128,7 +149,7 @@ class PaintRecommendationAgent:
         - Special features (washable, anti-mold, quick-dry, etc.)
         - Product lines (Premium, Standard, Economy, Specialty)
 
-        Remember: You have access to search_paints, filter_paints, and get_paint_details tools to help customers find exactly what they need.
+        Remember: You have access to search_paints, filter_paints, get_paint_details, and simulate_paint tools to help customers find exactly what they need and visualize the results.
         """
 
         self.prompt_template = ChatPromptTemplate.from_messages(
@@ -140,7 +161,13 @@ class PaintRecommendationAgent:
             ]
         )
 
-    def get_recommendation(self, message: str, session_uuid: str, user_id: int) -> str:
+    def get_recommendation(
+        self,
+        message: str,
+        session_uuid: str,
+        user_id: int,
+        image_base64: Optional[str] = None,
+    ) -> dict:
         """
         Get paint recommendation for a specific session.
 
@@ -148,10 +175,18 @@ class PaintRecommendationAgent:
             message: User's message/query
             session_uuid: Session UUID for conversation tracking
             user_id: User ID for session ownership
+            image_base64: Optional base64 encoded image for paint simulation
 
         Returns:
-            AI-generated recommendation response
+            Dict containing response text and optional image data
         """
+        # Store image data for potential use in tools
+        if image_base64:
+            self.current_image_data = image_base64
+            # Add minimal context about image without including the actual data
+            image_info = f"[IMAGEM RECEBIDA - {len(image_base64)//1000}KB] {message}"
+            message = image_info
+
         # Get session-specific memory
         memory = self.conversation_manager.get_memory_for_session(session_uuid, user_id)
 
@@ -173,7 +208,6 @@ class PaintRecommendationAgent:
                 handle_parsing_errors=True,
                 max_iterations=config.AGENT_MAX_ITERATIONS,
                 max_execution_time=config.AGENT_MAX_EXECUTION_TIME,
-                early_stopping_method="generate",  # Stop and generate response if max iterations reached
             )
 
             # Execute the agent
@@ -187,7 +221,14 @@ class PaintRecommendationAgent:
             logger.info(
                 f"Successfully processed recommendation for session {session_uuid}"
             )
-            return response["output"]
+
+            # Return both text response and any generated image
+            result = {"response": response["output"]}
+            if hasattr(self, "_generated_image"):
+                result["image_data"] = self._generated_image
+                delattr(self, "_generated_image")
+
+            return result
 
         except Exception as e:
             logger.error(f"Error in get_recommendation: {e}")
@@ -202,13 +243,123 @@ class PaintRecommendationAgent:
                 except:
                     pass
 
-                return (
-                    "Desculpe, sua pergunta requer uma análise mais complexa do que posso processar no momento. "
-                    "Pode reformular sua pergunta de forma mais específica? Por exemplo: 'Quero tinta azul para quarto' "
-                    "ou 'Preciso de tinta lavável para cozinha'."
+                return {
+                    "response": (
+                        "Sua consulta é muito detalhada e preciso de mais tempo para processar. "
+                        "Vou te ajudar de forma mais direta:\n\n"
+                        "• Para recomendações gerais: 'Quero tinta azul para sala'\n"
+                        "• Para características específicas: 'Preciso tinta lavável para cozinha'\n"
+                        "• Para simulação: Envie uma foto e diga 'Como ficaria em verde?'\n\n"
+                        "Qual dessas opções se encaixa melhor no que você precisa?"
+                    )
+                }
+
+            return {
+                "response": f"Desculpe, ocorreu um erro ao processar sua solicitação. Erro: {str(e)}"
+            }
+
+    def _translate_to_english(self, paint_description: str) -> str:
+        """
+        Translate paint description to English using GPT.
+        StabilityAI only supports English, so we use GPT to translate the description to English.
+        """
+        try:
+            prompt = f"Translate this paint color description to simple English for an AI image generator. Only return the English translation, nothing else: '{paint_description}'"
+
+            response = self.llm.invoke(prompt)
+            content = response.content
+
+            if content is None:
+                raise ValueError("Empty response from the LLM")
+
+            actual_text = ""
+            # Verifies if the response is a string or a list of strings
+            if isinstance(content, str):
+                actual_text = content
+            elif isinstance(content, list):
+                if len(content) > 0 and isinstance(content[0], str):
+                    actual_text = content[0]
+                else:
+                    raise TypeError(
+                        f"Response content is a list but its first element is not a string. Content: {content}"
+                    )
+            else:
+                raise TypeError(
+                    f"Unexpected response content type: {type(content)}. Content: {content}"
                 )
 
-            return f"Desculpe, ocorreu um erro ao processar sua solicitação. Erro: {str(e)}"
+            english_translation = actual_text.strip().replace('"', "").replace("'", "")
+
+            logger.info(f"Translated '{paint_description}' to '{english_translation}'")
+            return english_translation
+        except Exception as e:
+            logger.warning(
+                f"Translation failed: {e}, using original: {paint_description}"
+            )
+            return paint_description
+
+    def _simulate_paint_tool(self, image_base64: str, paint_description: str) -> str:
+        """Tool for simulating paint on an image"""
+        try:
+            logger.info(f"Simulating paint: {paint_description}")
+
+            # Always use current session image (ignore the placeholder parameter)
+            image_to_use = self.current_image_data
+
+            if not image_to_use:
+                return "Erro: Nenhuma imagem disponível para simulação. O usuário precisa fornecer uma imagem."
+
+            # Clean and validate base64 string
+            try:
+                # Remove any non-ASCII characters and whitespace
+                import re
+
+                image_to_use = re.sub(r"[^\x00-\x7F]+", "", image_to_use)
+                image_to_use = image_to_use.strip()
+
+                # Remove data URL prefix if present
+                if "," in image_to_use:
+                    image_to_use = image_to_use.split(",")[1]
+
+                # Validate base64 format
+                import base64
+
+                base64.b64decode(image_to_use, validate=True)
+
+            except Exception as e:
+                return f"Erro: Imagem base64 inválida ou corrompida. {str(e)}"
+
+            # Translate paint description to English for Stability AI
+            english_prompt = self._translate_to_english(paint_description)
+
+            # Call the inpainting service synchronously using a thread
+            import asyncio
+            import concurrent.futures
+            import threading
+
+            def run_async_in_thread():
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(
+                        simulate_paint_on_image(image_to_use, english_prompt)
+                    )
+                finally:
+                    new_loop.close()
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_async_in_thread)
+                result_bytes = future.result()
+
+            # Convert result to base64 for storage
+            result_base64 = base64.b64encode(result_bytes).decode("utf-8")
+            self._generated_image = result_base64
+
+            return f"Simulação de pintura concluída com sucesso! A imagem foi gerada mostrando como ficaria a parede com '{paint_description}'. A imagem simulada está sendo retornada para visualização."
+
+        except Exception as e:
+            logger.error(f"Error in paint simulation tool: {e}")
+            return f"Erro na simulação de pintura: {str(e)}"
 
     def _search_paints_tool(self, query: str, limit: int = 5) -> str:
         """Tool for semantic search of paint products"""

@@ -36,6 +36,7 @@ async def get_paint_recommendation(
     - "Preciso de tinta azul para o quarto"
     - "Quero uma cor que traga tranquilidade"
     - "Que cor você recomenda para uma sala de estar moderna?"
+    - "Simule uma cor de tinta para uma imagem"
 
     Features:
     - Product-specific recommendations with prices and features
@@ -46,6 +47,7 @@ async def get_paint_recommendation(
     Parameters:
     - `message`: Natural language query for paint recommendations
     - `session_uuid`: Optional session UUID. If not provided, a new session will be created.
+    - `image_base64`: Optional base64 encoded image for paint simulation
     """
     try:
         logger.info(f"Processing message from user {user_id}: {request.message}")
@@ -56,8 +58,8 @@ async def get_paint_recommendation(
 
         # Handle session UUID
         session_uuid = request.session_uuid
-        if not session_uuid:
-            # Create new session if none provided
+        if not session_uuid or session_uuid == "string":
+            # Create new session if none provided or if invalid
             session_uuid = conversation_manager.create_new_session(user_id)
             logger.info(f"Created new session {session_uuid} for user {user_id}")
         else:
@@ -67,30 +69,54 @@ async def get_paint_recommendation(
         if intent_category == "paint_question":
             # Handle paint-related questions using the main AI agent
             logger.info(f"Processing paint question for user {user_id}")
-            response = paint_agent.get_recommendation(
-                message=request.message, session_uuid=session_uuid, user_id=user_id
+            result = paint_agent.get_recommendation(
+                message=request.message,
+                session_uuid=session_uuid,
+                user_id=user_id,
+                image_base64=request.image_base64,
             )
+            # Handle both string and dict responses for backward compatibility
+            if isinstance(result, dict):
+                response = result.get("response", "")
+                image_data = result.get("image_data")
+            else:
+                response = result
+                image_data = None
 
         elif intent_category == "simple_greeting":
             # Handle greetings with friendly responses
             logger.info(f"Responding to greeting from user {user_id}")
             response = random.choice(QueryRouter.GREETING_RESPONSES)
+            image_data = None
 
         elif intent_category == "off_topic":
             # Handle off-topic questions
             logger.info(f"Redirecting off-topic question from user {user_id}")
             response = QueryRouter.OFF_TOPIC_RESPONSE
+            image_data = None
 
         else:
             # Fallback - treat as paint question
             logger.warning(
                 f"Unknown intent category '{intent_category}' for user {user_id}, treating as paint question"
             )
-            response = paint_agent.get_recommendation(
-                message=request.message, session_uuid=session_uuid, user_id=user_id
+            result = paint_agent.get_recommendation(
+                message=request.message,
+                session_uuid=session_uuid,
+                user_id=user_id,
+                image_base64=request.image_base64,
             )
+            # Handle both string and dict responses for backward compatibility
+            if isinstance(result, dict):
+                response = result.get("response", "")
+                image_data = result.get("image_data")
+            else:
+                response = result
+                image_data = None
 
-        return RecommendationResponse(response=response, session_uuid=session_uuid)
+        return RecommendationResponse(
+            response=response, session_uuid=session_uuid, image_data=image_data
+        )
 
     except Exception as e:
         logger.error(f"Error in recommendation endpoint: {e}")

@@ -23,7 +23,9 @@ class TestPaintRecommendationAgent:
             patch(
                 "libs.ai_service.app.agents.paint_recommendation_agent.get_vector_store"
             ) as mock_get_vs,
-            patch("libs.ai_service.app.agents.paint_recommendation_agent.ChatOpenAI") as mock_openai,
+            patch(
+                "libs.ai_service.app.agents.paint_recommendation_agent.ChatOpenAI"
+            ) as mock_openai,
         ):
 
             mock_get_vs.return_value = self.mock_vector_store
@@ -58,7 +60,9 @@ class TestPaintRecommendationAgent:
         mock_conv_manager = Mock()
 
         with (
-            patch("libs.ai_service.app.agents.paint_recommendation_agent.get_vector_store"),
+            patch(
+                "libs.ai_service.app.agents.paint_recommendation_agent.get_vector_store"
+            ),
             patch("libs.ai_service.app.agents.paint_recommendation_agent.ChatOpenAI"),
         ):
 
@@ -77,7 +81,7 @@ class TestPaintRecommendationAgent:
 
     def test_agent_tools_configuration(self):
         """Test that agent tools are properly configured."""
-        assert len(self.agent.tools) == 3
+        assert len(self.agent.tools) == 4
         for tool in self.agent.tools:
             assert hasattr(tool, "name")
             assert hasattr(tool, "description")
@@ -89,4 +93,3 @@ class TestPaintRecommendationAgent:
     def test_vector_store_integration(self):
         """Test that vector store is properly integrated."""
         assert self.agent.vector_store is self.mock_vector_store
-
