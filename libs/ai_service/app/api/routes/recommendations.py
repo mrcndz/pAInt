@@ -1,8 +1,10 @@
 import logging
+import random
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from ...agents.intent_router import QueryRouter, intent_router
 from ...auth.dependencies import get_current_user_id
 from ..dependencies import get_conversation_manager_instance, get_session_aware_agent
 from ..models import RecommendationRequest, RecommendationResponse, UserSessionsResponse
@@ -25,7 +27,7 @@ async def get_paint_recommendation(
     """
     Get AI-powered paint recommendations based on natural language queries.
 
-    This endpoint accepts natural language queries in Portuguese or English and returns
+    This endpoint accepts natural language queries in Portuguese and returns
     personalized paint recommendations using the AI agent with persistent conversation memory.
 
     **Authentication Required**: This endpoint requires a valid JWT token.
@@ -46,7 +48,11 @@ async def get_paint_recommendation(
     - `session_uuid`: Optional session UUID. If not provided, a new session will be created.
     """
     try:
-        logger.info(f"Recommendation request from user {user_id}: {request.message}")
+        logger.info(f"Processing message from user {user_id}: {request.message}")
+
+        # First classify the intent of the user's message
+        intent_category = intent_router.route_query(request.message)
+        logger.info(f"Intent classification for user {user_id}: {intent_category}")
 
         # Handle session UUID
         session_uuid = request.session_uuid
@@ -57,10 +63,32 @@ async def get_paint_recommendation(
         else:
             logger.info(f"Using existing session {session_uuid} for user {user_id}")
 
-        # Get recommendation using session-aware agent
-        response = paint_agent.get_recommendation(
-            message=request.message, session_uuid=session_uuid, user_id=user_id
-        )
+        # Route based on detected intent
+        if intent_category == "paint_question":
+            # Handle paint-related questions using the main AI agent
+            logger.info(f"Processing paint question for user {user_id}")
+            response = paint_agent.get_recommendation(
+                message=request.message, session_uuid=session_uuid, user_id=user_id
+            )
+
+        elif intent_category == "simple_greeting":
+            # Handle greetings with friendly responses
+            logger.info(f"Responding to greeting from user {user_id}")
+            response = random.choice(QueryRouter.GREETING_RESPONSES)
+
+        elif intent_category == "off_topic":
+            # Handle off-topic questions
+            logger.info(f"Redirecting off-topic question from user {user_id}")
+            response = QueryRouter.OFF_TOPIC_RESPONSE
+
+        else:
+            # Fallback - treat as paint question
+            logger.warning(
+                f"Unknown intent category '{intent_category}' for user {user_id}, treating as paint question"
+            )
+            response = paint_agent.get_recommendation(
+                message=request.message, session_uuid=session_uuid, user_id=user_id
+            )
 
         return RecommendationResponse(response=response, session_uuid=session_uuid)
 
@@ -108,7 +136,11 @@ async def reset_chat_session(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/chat/sessions", response_model=UserSessionsResponse, summary="Get user's chat sessions")
+@router.get(
+    "/chat/sessions",
+    response_model=UserSessionsResponse,
+    summary="Get user's chat sessions",
+)
 async def get_user_sessions(
     user_id: int = Depends(get_current_user_id),
 ):
@@ -129,12 +161,12 @@ async def get_user_sessions(
     try:
         conversation_manager = get_conversation_manager_instance()
         sessions = conversation_manager.get_user_sessions(user_id, limit=50)
-        
+
         return {
             "user_id": user_id,
             "sessions": sessions,
             "total_sessions": len(sessions),
-            "message": f"Retrieved {len(sessions)} chat sessions for user {user_id}"
+            "message": f"Retrieved {len(sessions)} chat sessions for user {user_id}",
         }
     except Exception as e:
         logger.error(f"Error getting user sessions: {e}")
