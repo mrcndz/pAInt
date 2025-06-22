@@ -13,6 +13,12 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     musl-dev \
     libpq-dev \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy pyproject.toml first
@@ -23,6 +29,7 @@ RUN pip install -e app/libs/shared
 
 # Install dependencies
 RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir stability-sdk
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \

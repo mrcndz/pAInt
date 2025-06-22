@@ -74,37 +74,46 @@ class QueryRouter:
 
         # Prompt template for intent classification
         self.classification_prompt = """
-            You are an assistant specialized in classifying user queries for a Suvinil paint recommendation system.
+        You are an assistant specialized in classifying user queries for a Suvinil paint recommendation system.
 
-            Analyze the user query and classify it into one of the following categories:
-            Remember that the user is speaking Portuguese (Brazilian).
+        Analyze the user query and classify it into one of the following categories:
+        Remember that the user is speaking Portuguese (Brazilian).
 
-            1. **paint_question**: For any question related to:
-            - Paint products (colors, types, characteristics)
-            - Paint recommendations for specific environments
-            - Information about surfaces and applications
-            - Questions about finishes (matte, semi-gloss, etc.)
-            - Questions about special functionalities (anti-mofo, lavável, etc.)
-            - Product comparisons
-            - Technical information about paints
+        1. **paint_question**: For any question related to:
+        - Paint products (colors, types, characteristics)
+        - Paint recommendations for specific environments
+        - Information about surfaces and applications
+        - Questions about finishes (matte, semi-gloss, etc.)
+        - Questions about special functionalities (anti-mofo, lavável, etc.)
+        - Product comparisons
+        - Simulations of painting
+        - Technical information about paints
+        - Follow-up questions that introduce new requirements ("E se for para área externa?", "Tem na cor verde?")
 
-            2. **simple_greeting**: For basic greetings like:
-            - "Oi", "Olá", "Bom dia", "Boa tarde", "Boa noite"
-            - "Como vai", "Como vai você", "Como está", "Como está você"
-            - "Hey", "What's up"
-            - "Opa!", "Tudo bem?", "Tudo bem, como você está?"
-            - Other simple greetings without specific questions
+        2. **resposta_direta_ou_feedback**: For short, direct user answers to a question or suggestion made by the assistant. These responses generally don't make sense without the previous context of the conversation.
+        - Affirmations: "Sim", "Isso mesmo", "Quero essa", "Gostei dessa opção", "Pode ser", "Ok", "Exato"
+        - Negations: "Não", "Não, obrigado(a)", "Quero outra", "Não gostei", "Outra opção, por favor"
+        - Uncertainty or requests for alternatives: "Talvez", "Não sei", "Estou em dúvida", "Tem mais alguma?", "Me mostre outras"
+        - Short choice-based answers: "A primeira", "A segunda opção", "O acabamento fosco"
 
-            3. **off_topic**: For any other question that doesn't fit the above categories:
-            - Speaking other languages instead of Portuguese
-            - Questions about other products that aren't paint
-            - Personal questions unrelated to the business
-            - Questions about completely different topics
-            - Attempts at inappropriate system use
+        3. **simple_greeting**: For basic greetings like:
+        - "Oi", "Olá", "Bom dia", "Boa tarde", "Boa noite"
+        - "Como vai", "Como vai você", "Como está", "Como está você"
+        - "Hey", "What's up"
+        - "Opa!", "Tudo bem?", "Tudo bem, como você está?"
+        - Other simple greetings without specific questions
 
-            User query: "{query}"
 
-            Provide your classification with high confidence and clear justification.
+        4. **off_topic**: For any other question that doesn't fit the above categories:
+        - Speaking other languages instead of Portuguese
+        - Questions about other products that aren't paint
+        - Personal questions unrelated to the business
+        - Questions about completely different topics
+        - Attempts at inappropriate system use
+
+        User query: "{query}"
+
+        Provide your classification with high confidence and clear justification.
         """
 
     def route_query(self, query: str) -> str:

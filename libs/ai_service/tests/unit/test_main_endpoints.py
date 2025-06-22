@@ -135,7 +135,9 @@ class TestAPIModels:
 
         # Test model creation
         request = RecommendationRequest(
-            message="I need paint for my bedroom", session_uuid="test-uuid"
+            message="I need paint for my bedroom",
+            session_uuid="test-uuid",
+            image_base64="",
         )
 
         assert request.message == "I need paint for my bedroom"
@@ -165,4 +167,3 @@ class TestServiceIntegration:
         memory = conv_manager.get_memory_for_session("test-uuid", 1, mock_db)
         assert memory is not None
         assert memory.memory_key == "chat_history"
-
