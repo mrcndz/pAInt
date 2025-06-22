@@ -16,7 +16,9 @@ def create_app() -> FastAPI:
     setup_middleware(app)
 
     app.include_router(health.router, tags=["Health"])
-    app.include_router(recommendations.router, prefix="/api/v1", tags=["Recommendations"])
+    app.include_router(
+        recommendations.router, prefix="/api/v1", tags=["Recommendations"]
+    )
     app.include_router(search.router, prefix="/api/v1", tags=["Search"])
     app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 
