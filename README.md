@@ -14,6 +14,7 @@ A solução adota uma **arquitetura de microsserviços** com separação clara d
 - **Responsabilidade**: Lógica de IA, agentes colaborativos e pipeline RAG
 - **Tecnologias**: LangChain + OpenAI GPT + Embeddings + pgvector
 - **Funcionalidades**:
+  - Intent Router para classificação inteligente de consultas
   - Agentes especializados para recomendação de tintas
   - Busca semântica com embeddings OpenAI
   - Gerenciamento de conversas com persistência de sessão
@@ -133,6 +134,8 @@ pAInt/
 │   ├── ai_service/              # Serviço de IA
 │   │   ├── app/
 │   │   │   ├── agents/          # Agentes colaborativos
+│   │   │   │   ├── intent_router.py              # Router de classificação de intenções
+│   │   │   │   └── paint_recommendation_agent.py # Agente de recomendações
 │   │   │   ├── api/             # Endpoints de IA
 │   │   │   ├── auth/            # Dependências de autenticação
 │   │   │   ├── config/          # Configurações
@@ -205,6 +208,16 @@ O sistema utiliza **LangChain** como framework orquestrador para conectar-se com
 ### **Agentes Colaborativos (AgentFlow)**
 O sistema implementa uma arquitetura de **agentes especializados** com responsabilidades distintas:
 
+#### 🚦 **Intent Router** (`intent_router.py`)
+- **Especialidade**: Classificação inteligente de consultas antes do processamento principal
+- **Tecnologia**: GPT-3.5-turbo com saída estruturada (Structured Output)
+- **Funcionalidades**:
+  - Classifica consultas em 3 categorias: `paint_question`, `simple_greeting`, `off_topic`
+  - Otimização de custos: só aciona agentes complexos para perguntas relevantes
+  - Respostas instantâneas para saudações e redirecionamentos educados
+  - Precisão na classificação com alta confiança
+- **Benefícios**: Reduz significativamente custos de API e melhora a experiência do usuário
+
 #### 🎯 **Agent de Recomendação** (`paint_recommendation_agent.py`)
 - **Especialidade**: Conversação natural e recomendações personalizadas
 - **Ferramentas disponíveis**:
@@ -250,7 +263,7 @@ Key Responsibilities:
 - Search and recommend appropriate paint products using available tools
 - Provide detailed product information including prices, features, and usage recommendations
 - Maintain conversation context to provide personalized recommendations
-- Answer questions in Portuguese (primary) or English as appropriate
+- Answer questions in Portuguese
 
 Guidelines:
 - Always be helpful, professional, and enthusiastic about paint projects
