@@ -105,4 +105,3 @@ class ChatSessionRepository(ABC):
     async def delete(self, session_id: str) -> bool:
         """Delete chat session."""
         pass
-

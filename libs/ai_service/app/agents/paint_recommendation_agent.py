@@ -48,7 +48,7 @@ class PaintFilterArgs(BaseModel):
     )
     surface_types: Optional[List[str]] = Field(
         default=None,
-        description="Compatible surface types like 'concreto', 'madeira', 'metal', etc.",
+        description="Compatible surface types like 'parede', 'teto', 'madeira', 'metal', etc.",
     )
     limit: Optional[int] = Field(
         default=5, description="Maximum number of results to return"

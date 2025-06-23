@@ -52,7 +52,7 @@ class PaintProductModel(Base):
     # AI-enriched fields
     ai_summary: Mapped[Optional[str]] = mapped_column(Text)
     usage_tags: Mapped[List[str]] = mapped_column(ARRAY(Text), default=list)
-    
+
     # Vector embedding for semantic search (1536 dimensions for OpenAI ada-002)
     embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(1536))
 
