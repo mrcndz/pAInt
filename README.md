@@ -382,7 +382,7 @@ graph TD
     B --> C[Agente analisa intenção]
     C --> D{Simulação necessária?}
     D -->|Sim| E[Tool simulate_paint]
-    E --> F[GPT-4o extrai cor atual]
+    E --> F[Insere descrição da cor atual]
     F --> G[Traduz descrição para inglês]
     G --> H[Stability AI gera simulação]
     H --> I[Retorna texto + imagem]
