@@ -56,7 +56,7 @@ class PaintProductModel(TestBase):
     ai_summary: Mapped[Optional[str]] = mapped_column(Text)
     # Store as JSON string instead of ARRAY for SQLite compatibility
     usage_tags: Mapped[Optional[str]] = mapped_column(Text, default="[]")
-    
+
     # Vector embedding stored as JSON string for SQLite compatibility
     embedding: Mapped[Optional[str]] = mapped_column(Text)
 
@@ -75,8 +75,12 @@ class ChatSessionModel(TestBase):
     __tablename__ = "chat_sessions"
 
     # Use string UUID for SQLite compatibility
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    session_uuid: Mapped[str] = mapped_column(String(36), unique=True, index=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    session_uuid: Mapped[str] = mapped_column(
+        String(36), unique=True, index=True, default=lambda: str(uuid.uuid4())
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     # Store as JSON for SQLite compatibility
     session_data: Mapped[Optional[str]] = mapped_column(Text, default="{}")

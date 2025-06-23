@@ -89,4 +89,3 @@ class SyncSQLAlchemyUserRepository(UserRepository):
         self.session.delete(model)
         self.session.commit()
         return True
-

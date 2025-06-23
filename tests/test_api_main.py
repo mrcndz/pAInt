@@ -23,4 +23,3 @@ def test_api_health_endpoint(api_client):
     assert data["service"] == "api_service"
     assert "components" in data
     assert data["components"]["api"] is True
-
