@@ -140,6 +140,7 @@ class PaintRecommendationAgent:
         - When users provide images, use the simulate_paint tool to show them how recommended paints would look
         - Only use paint simulation when both an image and a specific paint color/product are available
         - The image data is stored separately and accessed via tools - never include actual image data in conversations
+        - If the user expresses gratitude (e.g., "obrigado", "valeu", "ficou lindo!"), respond politely acknowledging their thanks and offering further assistance. For example: "De nada! Se precisar de mais alguma coisa sobre tintas, é só perguntar."
 
         Available Product Information:
         - Suvinil paint products with various colors, finishes, and features
@@ -227,12 +228,14 @@ class PaintRecommendationAgent:
             # Check if response indicates max iterations reached but we have an image
             response_text = response.get("output", "")
             result = {"response": response_text}
-            
+
             if hasattr(self, "_generated_image"):
                 result["image_data"] = self._generated_image
                 # Override the error message if we successfully generated an image
                 if "Agent stopped due to max iterations" in response_text:
-                    result["response"] = "Simulação de pintura concluída com sucesso! A imagem foi gerada e está sendo retornada para visualização."
+                    result["response"] = (
+                        "Simulação de pintura concluída com sucesso! A imagem foi gerada e está sendo retornada para visualização."
+                    )
                 delattr(self, "_generated_image")
 
             return result
@@ -254,7 +257,9 @@ class PaintRecommendationAgent:
                 result = {"response": ""}
                 if hasattr(self, "_generated_image"):
                     result["image_data"] = self._generated_image
-                    result["response"] = "Simulação de pintura concluída com sucesso! A imagem foi gerada e está sendo retornada para visualização."
+                    result["response"] = (
+                        "Simulação de pintura concluída com sucesso! A imagem foi gerada e está sendo retornada para visualização."
+                    )
                     delattr(self, "_generated_image")
                     return result
 
