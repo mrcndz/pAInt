@@ -22,11 +22,14 @@ class ConversationManager:
     # Automatic database persistence
     # Session isolation per user
     # Message history serialization/deserialization
+    # Automatic message limit (keeps only 10 most recent messages)
     """
 
-    def __init__(self):
+    def __init__(self, max_messages_per_session: int = 10):
         # In-memory cache: (session_uuid, user_id) -> ConversationBufferMemory
         self._session_cache: Dict[tuple, ConversationBufferMemory] = {}
+        # Maximum number of messages to keep per session
+        self.max_messages_per_session = max_messages_per_session
 
     def get_memory_for_session(
         self, session_uuid: str, user_id: int, db_session: Optional[Session] = None
@@ -115,6 +118,9 @@ class ConversationManager:
                     memory.chat_memory.add_message(message)
 
                 logger.info(f"Loaded conversation history for session {session_uuid}")
+
+                # Apply message limit after loading from database
+                self._limit_memory_messages(memory)
             else:
                 logger.info(f"No existing history found for session {session_uuid}")
 
@@ -129,6 +135,29 @@ class ConversationManager:
         finally:
             if not use_provided_session:
                 db_session.close()
+
+    def _limit_memory_messages(self, memory: ConversationBufferMemory) -> None:
+        """
+        Limit the number of messages in memory to max_messages_per_session.
+        Keeps only the most recent messages.
+
+        Args:
+            memory: ConversationBufferMemory to limit
+        """
+        messages = memory.chat_memory.messages
+
+        if len(messages) > self.max_messages_per_session:
+            # Keep only the most recent messages
+            recent_messages = messages[-self.max_messages_per_session :]
+
+            # Clear all messages and add back only the recent ones
+            memory.chat_memory.clear()
+            for message in recent_messages:
+                memory.chat_memory.add_message(message)
+
+            logger.info(
+                f"Limited session messages from {len(messages)} to {len(recent_messages)} messages"
+            )
 
     def save_session_to_database(
         self,
@@ -155,6 +184,9 @@ class ConversationManager:
 
         try:
             logger.info(f"Saving session {session_uuid} to database")
+
+            # Apply message limit before saving
+            self._limit_memory_messages(memory)
 
             # Serialize messages from memory
             messages_data = []
@@ -257,7 +289,7 @@ class ConversationManager:
             Latest session UUID as string, or None if no sessions exist
         """
         db_session = next(get_db())
-        
+
         try:
             # Get the most recent session for this user
             latest_session = (
@@ -266,39 +298,41 @@ class ConversationManager:
                 .order_by(ChatSessionModel.last_activity.desc())
                 .first()
             )
-            
+
             if latest_session:
                 return str(latest_session.session_uuid)
-            
+
             return None
-            
+
         except Exception as e:
             logger.error(f"Error getting latest session for user {user_id}: {e}")
             return None
         finally:
             db_session.close()
 
-    def get_last_assistant_message(self, session_uuid: str, user_id: int) -> Optional[str]:
+    def get_last_assistant_message(
+        self, session_uuid: str, user_id: int
+    ) -> Optional[str]:
         """
         Get the last assistant message from a conversation session.
-        
+
         Args:
             session_uuid: Session UUID to get message from
             user_id: User ID for security verification
-            
+
         Returns:
             Last assistant message content or None if no assistant message exists
         """
         try:
             memory = self.get_memory_for_session(session_uuid, user_id)
-            
+
             # Iterate backwards through messages to find last AI message
             for message in reversed(memory.chat_memory.messages):
                 if isinstance(message, AIMessage):
                     return message.content
-                    
+
             return None
-            
+
         except Exception as e:
             logger.error(f"Error getting last assistant message: {e}")
             return None
