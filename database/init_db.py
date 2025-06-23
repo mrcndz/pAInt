@@ -4,10 +4,11 @@ Database initialization utility for pAInt project.
 Runs migrations and seeds data.
 """
 
+import logging
 import os
+
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +61,7 @@ def initialize_database():
         migration_files = sorted(
             [f for f in os.listdir(migrations_dir) if f.endswith(".sql")]
         )
+
         for migration_file in migration_files:
             migration_path = os.path.join(migrations_dir, migration_file)
             logger.info(f"Running migration: {migration_file}")

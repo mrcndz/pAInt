@@ -8,38 +8,31 @@ import pytest
 def test_login_success(api_client):
     """Test successful login with mocked services."""
     from datetime import datetime
-    from unittest.mock import AsyncMock, Mock, patch
+    from unittest.mock import AsyncMock
 
     from libs.api.app.core.entities import Role, User
+    from libs.api.app.core.security import get_auth_use_cases
+    from libs.api.app.main import app
 
-    # Mock user data
-    mock_user = User(
-        id=1,
-        username="testuser",
-        email="test@example.com",
-        password_hash="hashed_password",
-        role=Role.USER,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-    )
+    # Mock auth use cases
+    mock_auth_service = AsyncMock()
+    mock_auth_service.login.return_value = {
+        "access_token": "test_token_123",
+        "token_type": "bearer",
+        "user": {
+            "id": 1,
+            "username": "testuser",
+            "email": "test@example.com",
+            "role": Role.USER,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+        },
+    }
 
-    # Mock the auth use cases login method
-    with patch("libs.api.app.core.security.get_auth_use_cases") as mock_get_auth:
-        mock_auth_service = AsyncMock()
-        mock_auth_service.login.return_value = {
-            "access_token": "test_token_123",
-            "token_type": "bearer",
-            "user": {
-                "id": 1,
-                "username": "testuser",
-                "email": "test@example.com",
-                "role": Role.USER,
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
-            },
-        }
-        mock_get_auth.return_value = mock_auth_service
+    # Override the dependency
+    app.dependency_overrides[get_auth_use_cases] = lambda: mock_auth_service
 
+    try:
         response = api_client.post(
             "/auth/login", json={"username": "testuser", "password": "testpass123"}
         )
@@ -50,6 +43,16 @@ def test_login_success(api_client):
         assert data["token_type"] == "bearer"
         assert "user" in data
         assert data["user"]["username"] == "testuser"
+
+        # Verify the mock was called
+        mock_auth_service.login.assert_called_once_with(
+            username="testuser", password="testpass123"
+        )
+
+    finally:
+        # Clean up the override
+        if get_auth_use_cases in app.dependency_overrides:
+            del app.dependency_overrides[get_auth_use_cases]
 
 
 def test_login_invalid_credentials(api_client):
