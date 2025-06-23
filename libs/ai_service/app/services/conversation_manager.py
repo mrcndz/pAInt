@@ -246,6 +246,38 @@ class ConversationManager:
 
         return session_uuid
 
+    def get_latest_session_uuid(self, user_id: int) -> Optional[str]:
+        """
+        Get the most recent session UUID for a user.
+
+        Args:
+            user_id: User ID to get latest session for
+
+        Returns:
+            Latest session UUID as string, or None if no sessions exist
+        """
+        db_session = next(get_db())
+        
+        try:
+            # Get the most recent session for this user
+            latest_session = (
+                db_session.query(ChatSessionModel)
+                .filter(ChatSessionModel.user_id == user_id)
+                .order_by(ChatSessionModel.last_activity.desc())
+                .first()
+            )
+            
+            if latest_session:
+                return str(latest_session.session_uuid)
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting latest session for user {user_id}: {e}")
+            return None
+        finally:
+            db_session.close()
+
     def clear_session_cache(self, session_uuid: str, user_id: int) -> None:
         """
         Remove session from in-memory cache.

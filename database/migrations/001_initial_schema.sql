@@ -14,10 +14,10 @@ CREATE TABLE paint_products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     color VARCHAR(100) NOT NULL,
-    surface_types TEXT[] NOT NULL DEFAULT '{}', -- ['wood', 'metal', 'wall', 'ceiling']
-    environment VARCHAR(50) NOT NULL CHECK (environment IN ('internal', 'external', 'both')),
-    finish_type VARCHAR(50) NOT NULL, -- 'matte', 'satin', 'semi-gloss', 'gloss'
-    features TEXT[] DEFAULT '{}', -- ['washable', 'anti-mold', 'quick-dry', 'eco-friendly']
+    surface_types TEXT[] NOT NULL DEFAULT '{}', -- ['madeira', 'metal', 'parede', 'teto']
+    environment VARCHAR(50) NOT NULL CHECK (environment IN ('interno', 'externo', 'ambos')),
+    finish_type VARCHAR(50) NOT NULL, -- 'fosco', 'acetinado', 'semi-brilho', 'brilhante'
+    features TEXT[] DEFAULT '{}', -- ['lavável', 'antimofo', 'secagem rápida', 'ecológico']
     product_line VARCHAR(100) NOT NULL, -- 'Premium', 'Standard', 'Economy'
     price DECIMAL(10,2),
     ai_summary TEXT, -- Enriquecido por IA (AI-generated)
