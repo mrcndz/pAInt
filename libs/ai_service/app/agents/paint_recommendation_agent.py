@@ -149,6 +149,8 @@ class PaintRecommendationAgent:
         - Special features (lavável, antimofo, secagem rápida, etc.)
         - Product lines (Premium, Padrão, Econômico, Especial)
 
+        The products are available to buy in Suvinil's online or physical store if asked.
+
         Remember: You have access to search_paints, filter_paints, get_paint_details, and simulate_paint tools to help customers find exactly what they need and visualize the results.
         """
 

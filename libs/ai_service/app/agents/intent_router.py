@@ -102,6 +102,14 @@ class QueryRouter:
             - Examples: "Obrigado(a)", "Até mais!", "Obrigado(a) pela ajuda", "Até mais!", "Até mais! Obrigado(a)"
             - Examples: "Era só isso", "Por enquanto é só", "Entendido"
             - Examples: "Tchau", "Até mais"
+        - Dúvidas sobre localização de lojas
+        - Questions about product availability or location
+            - Examples: "Onde você comprou?", "Quem vende isso?", "Como você vende isso?", "Qual o preço disso?", "Quanto custa isso?"
+            - Examples: "Onde compra?", "Quem vende?", "Onde posso comprar?"
+            - Examples: "Onde você comprou isso?", "Onde compra isso?", "Quem vende essa tinta?"
+            - Examples: "Onde encontro os produtos Suvinil?", "Onde posso comprar essa tinta?"
+            - Examples: "Tem essa tinta para vender em [nome da cidade]?", "Vocês têm loja física?"
+            - Examples: "Vocês entregam?", "Posso comprar online?", "Ainda tem em estoque?"
 
 
         3. **simple_greeting**: For basic greetings like:
@@ -144,7 +152,7 @@ class QueryRouter:
             # Prepare the prompt with the user query and previous message
             formatted_prompt = self.classification_prompt.format(
                 query=query.strip(),
-                previous_message=previous_message.strip() if previous_message else ""
+                previous_message=previous_message.strip() if previous_message else "",
             )
 
             # Call the structured LLM for classification
