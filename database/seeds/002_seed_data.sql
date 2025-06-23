@@ -3,9 +3,9 @@
 
 -- Insert sample users
 INSERT INTO users (username, email, password_hash, role) VALUES
-('admin', 'admin@paint.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeyFwtO4rZpgqB1Wa', 'admin'), -- password: admin123
-('demo_user', 'demo@paint.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeyFwtO4rZpgqB1Wa', 'user') -- password: demo123
-ON CONFLICT (username) DO NOTHING;
+('admin', 'admin@paint.com', '$2b$12$WWCrH4yfOPiIJCSBtsABdO14FbdyTJOK7PFnqqDGcbBaeqDRR6.R6', 'admin'), -- password: admin123
+('demo_user', 'demo@paint.com', '$2b$12$TEaM8GF3OAs88zXgoxf.6eqNz0dd3n0H28/nwXXemtIFGkLCpbEUu', 'user') -- password: demo123
+ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 -- Insert sample paint products (Suvinil-inspired catalog) with Portuguese features
 INSERT INTO paint_products (name, color, surface_types, environment, finish_type, features, product_line, price) VALUES
