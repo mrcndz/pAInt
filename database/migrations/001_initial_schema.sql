@@ -18,7 +18,7 @@ CREATE TABLE paint_products (
     environment VARCHAR(50) NOT NULL CHECK (environment IN ('interno', 'externo', 'ambos')),
     finish_type VARCHAR(50) NOT NULL, -- 'fosco', 'acetinado', 'semi-brilho', 'brilhante'
     features TEXT[] DEFAULT '{}', -- ['lavável', 'antimofo', 'secagem rápida', 'ecológico']
-    product_line VARCHAR(100) NOT NULL, -- 'Premium', 'Standard', 'Economy'
+    product_line VARCHAR(100) NOT NULL, -- 'Premium', 'Padrão', 'Econômico', 'Especial'
     price DECIMAL(10,2),
     ai_summary TEXT, -- Enriquecido por IA (AI-generated)
     usage_tags TEXT[] DEFAULT '{}', -- ['family-friendly', 'modern-look', 'high-traffic']
@@ -44,7 +44,7 @@ CREATE INDEX idx_paint_features ON paint_products USING GIN(features);
 CREATE INDEX idx_paint_usage_tags ON paint_products USING GIN(usage_tags);
 
 CREATE INDEX idx_paint_text_search ON paint_products USING GIN(
-    to_tsvector('english', COALESCE(name, '') || ' ' || COALESCE(ai_summary, ''))
+    to_tsvector('portuguese', COALESCE(name, '') || ' ' || COALESCE(ai_summary, ''))
 );
 
 CREATE INDEX idx_chat_sessions_activity ON chat_sessions(last_activity);
