@@ -58,12 +58,31 @@ async def get_paint_recommendation(
 
         # Handle session UUID
         session_uuid = request.session_uuid
-        if not session_uuid or session_uuid == "string":
-            # Create new session if none provided or if invalid
-            session_uuid = conversation_manager.create_new_session(user_id)
-            logger.info(f"Created new session {session_uuid} for user {user_id}")
+        if not session_uuid or session_uuid == "string" or len(session_uuid) < 10:
+            # Try to get user's latest session first
+            latest_session = conversation_manager.get_latest_session_uuid(user_id)
+            if latest_session:
+                session_uuid = latest_session
+                logger.info(f"Using latest existing session {session_uuid} for user {user_id}")
+            else:
+                # Create new session if no existing sessions found
+                session_uuid = conversation_manager.create_new_session(user_id)
+                logger.info(f"Created new session {session_uuid} for user {user_id}")
         else:
-            logger.info(f"Using existing session {session_uuid} for user {user_id}")
+            # Validate UUID format
+            try:
+                import uuid
+                uuid.UUID(session_uuid)
+                logger.info(f"Using provided session {session_uuid} for user {user_id}")
+            except ValueError:
+                # Invalid UUID format, try latest session or create new
+                latest_session = conversation_manager.get_latest_session_uuid(user_id)
+                if latest_session:
+                    session_uuid = latest_session
+                    logger.info(f"Invalid UUID provided, using latest session {session_uuid} for user {user_id}")
+                else:
+                    session_uuid = conversation_manager.create_new_session(user_id)
+                    logger.info(f"Invalid UUID and no existing sessions, created new session {session_uuid} for user {user_id}")
 
         # Route based on detected intent
         if intent_category == "paint_question":
