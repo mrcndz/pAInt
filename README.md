@@ -472,7 +472,7 @@ Para o gerenciamento das atividades do projeto, foi utilizada a ferramenta **Not
 - `POST /search` - Busca semântica direta
 - `GET /health` - Status de saúde dos serviços
 
-#### **Novo: Simulação Visual Integrada**
+#### **Simulação Visual Integrada**
 O endpoint `/api/v1/recommend` agora aceita imagens e retorna simulações visuais:
 ```json
 {
