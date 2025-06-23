@@ -155,6 +155,11 @@ pAInt/
 ### Executar Testes
 
 ```bash
+# Depois de criar um ambiente virtual, instale as dependências
+pip install -r requirements.txt
+
+# Rodando os testes
+
 # Testes de integração
 ./tests/run_tests.sh
 
