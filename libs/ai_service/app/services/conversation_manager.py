@@ -278,6 +278,31 @@ class ConversationManager:
         finally:
             db_session.close()
 
+    def get_last_assistant_message(self, session_uuid: str, user_id: int) -> Optional[str]:
+        """
+        Get the last assistant message from a conversation session.
+        
+        Args:
+            session_uuid: Session UUID to get message from
+            user_id: User ID for security verification
+            
+        Returns:
+            Last assistant message content or None if no assistant message exists
+        """
+        try:
+            memory = self.get_memory_for_session(session_uuid, user_id)
+            
+            # Iterate backwards through messages to find last AI message
+            for message in reversed(memory.chat_memory.messages):
+                if isinstance(message, AIMessage):
+                    return message.content
+                    
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting last assistant message: {e}")
+            return None
+
     def clear_session_cache(self, session_uuid: str, user_id: int) -> None:
         """
         Remove session from in-memory cache.

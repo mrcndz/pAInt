@@ -52,8 +52,13 @@ async def get_paint_recommendation(
     try:
         logger.info(f"Processing message from user {user_id}: {request.message}")
 
+        # Get the last assistant message for context (before session handling)
+        previous_assistant_message = ""
+        if request.session_uuid and request.session_uuid != "string" and len(request.session_uuid) >= 10:
+            previous_assistant_message = conversation_manager.get_last_assistant_message(request.session_uuid, user_id) or ""
+
         # First classify the intent of the user's message
-        intent_category = intent_router.route_query(request.message)
+        intent_category = intent_router.route_query(request.message, previous_assistant_message)
         logger.info(f"Intent classification for user {user_id}: {intent_category}")
 
         # Handle session UUID
