@@ -52,18 +52,42 @@ async def get_paint_recommendation(
     try:
         logger.info(f"Processing message from user {user_id}: {request.message}")
 
+        # Get the last assistant message for context (before session handling)
+        previous_assistant_message = ""
+        if request.session_uuid and request.session_uuid != "string" and len(request.session_uuid) >= 10:
+            previous_assistant_message = conversation_manager.get_last_assistant_message(request.session_uuid, user_id) or ""
+
         # First classify the intent of the user's message
-        intent_category = intent_router.route_query(request.message)
+        intent_category = intent_router.route_query(request.message, previous_assistant_message)
         logger.info(f"Intent classification for user {user_id}: {intent_category}")
 
         # Handle session UUID
         session_uuid = request.session_uuid
-        if not session_uuid or session_uuid == "string":
-            # Create new session if none provided or if invalid
-            session_uuid = conversation_manager.create_new_session(user_id)
-            logger.info(f"Created new session {session_uuid} for user {user_id}")
+        if not session_uuid or session_uuid == "string" or len(session_uuid) < 10:
+            # Try to get user's latest session first
+            latest_session = conversation_manager.get_latest_session_uuid(user_id)
+            if latest_session:
+                session_uuid = latest_session
+                logger.info(f"Using latest existing session {session_uuid} for user {user_id}")
+            else:
+                # Create new session if no existing sessions found
+                session_uuid = conversation_manager.create_new_session(user_id)
+                logger.info(f"Created new session {session_uuid} for user {user_id}")
         else:
-            logger.info(f"Using existing session {session_uuid} for user {user_id}")
+            # Validate UUID format
+            try:
+                import uuid
+                uuid.UUID(session_uuid)
+                logger.info(f"Using provided session {session_uuid} for user {user_id}")
+            except ValueError:
+                # Invalid UUID format, try latest session or create new
+                latest_session = conversation_manager.get_latest_session_uuid(user_id)
+                if latest_session:
+                    session_uuid = latest_session
+                    logger.info(f"Invalid UUID provided, using latest session {session_uuid} for user {user_id}")
+                else:
+                    session_uuid = conversation_manager.create_new_session(user_id)
+                    logger.info(f"Invalid UUID and no existing sessions, created new session {session_uuid} for user {user_id}")
 
         # Route based on detected intent
         if intent_category == "paint_question":

@@ -80,21 +80,37 @@ class QueryRouter:
         Remember that the user is speaking Portuguese (Brazilian).
 
         1. **paint_question**: For any question related to:
-        - Paint products (colors, types, characteristics)
+        - Paint products (colors, types, characteristics, features, **prices**)
         - Paint recommendations for specific environments
         - Information about surfaces and applications
-        - Questions about finishes (matte, semi-gloss, etc.)
+        - Questions about finishes (matte, semi-brilhante, etc.)
         - Questions about special functionalities (anti-mofo, lavável, etc.)
+        - About application usage (lavavel, anti-mofo, etc.)
+        - Location-based recommendations (kitchen, bathroom, etc.)
         - Product comparisons
         - Simulations of painting
+            - Examples: "Como ficaria isso se fosse feito em verde?", "Como ficaria isso se fosse feito em azul?", "Como ficaria isso se fosse feito em amarelo?", "Simule", "Pode simular?"
         - Technical information about paints
-        - Follow-up questions that introduce new requirements ("E se for para área externa?", "Tem na cor verde?")
-
-        2. **resposta_direta_ou_feedback**: For short, direct user answers to a question or suggestion made by the assistant. These responses generally don't make sense without the previous context of the conversation.
+        - **Follow-up questions that clarify or request more details about the current topic**, or that introduce new requirements.
+            - Examples: "E se for para área externa?", "Tem na cor verde?", **"E quanto aos preços que você mencionou?"**, "Qual o rendimento disso?", "Isso é lavável?"
+            - Examples: "Quem vende isso?", "Onde você comprou?", "Como você vende isso?", "Qual o preço disso?", "Quanto custa isso?"
         - Affirmations: "Sim", "Isso mesmo", "Quero essa", "Gostei dessa opção", "Pode ser", "Ok", "Exato"
         - Negations: "Não", "Não, obrigado(a)", "Quero outra", "Não gostei", "Outra opção, por favor"
         - Uncertainty or requests for alternatives: "Talvez", "Não sei", "Estou em dúvida", "Tem mais alguma?", "Me mostre outras"
         - Short choice-based answers: "A primeira", "A segunda opção", "O acabamento fosco"
+        - Ending conversations with "Obrigado(a)" or "Até mais!"
+            - Examples: "Obrigado(a)", "Até mais!", "Obrigado(a) pela ajuda", "Até mais!", "Até mais! Obrigado(a)"
+            - Examples: "Era só isso", "Por enquanto é só", "Entendido"
+            - Examples: "Tchau", "Até mais"
+        - Dúvidas sobre localização de lojas
+        - Questions about product availability or location
+            - Examples: "Onde você comprou?", "Quem vende isso?", "Como você vende isso?", "Qual o preço disso?", "Quanto custa isso?"
+            - Examples: "Onde compra?", "Quem vende?", "Onde posso comprar?"
+            - Examples: "Onde você comprou isso?", "Onde compra isso?", "Quem vende essa tinta?"
+            - Examples: "Onde encontro os produtos Suvinil?", "Onde posso comprar essa tinta?"
+            - Examples: "Tem essa tinta para vender em [nome da cidade]?", "Vocês têm loja física?"
+            - Examples: "Vocês entregam?", "Posso comprar online?", "Ainda tem em estoque?"
+
 
         3. **simple_greeting**: For basic greetings like:
         - "Oi", "Olá", "Bom dia", "Boa tarde", "Boa noite"
@@ -111,17 +127,20 @@ class QueryRouter:
         - Questions about completely different topics
         - Attempts at inappropriate system use
 
-        User query: "{query}"
+        Previous assistant message (if any): "{previous_message}"
+        Current user query: "{query}"
 
+        When classifying, consider the context of the previous message to better understand follow-up questions.
         Provide your classification with high confidence and clear justification.
         """
 
-    def route_query(self, query: str) -> str:
+    def route_query(self, query: str, previous_message: str = "") -> str:
         """
         Classifies a user query and returns the identified category.
 
         Args:
             query (str): The user question or query to be classified
+            previous_message (str, optional): The previous assistant message for context
 
         Returns:
             str: The identified category ("paint_question", "simple_greeting", or "off_topic")
@@ -130,8 +149,11 @@ class QueryRouter:
             Exception: If there's an error in LLM communication or processing
         """
         try:
-            # Prepare the prompt with the user query
-            formatted_prompt = self.classification_prompt.format(query=query.strip())
+            # Prepare the prompt with the user query and previous message
+            formatted_prompt = self.classification_prompt.format(
+                query=query.strip(),
+                previous_message=previous_message.strip() if previous_message else "",
+            )
 
             # Call the structured LLM for classification
             result: IntentCategory = self.structured_llm.invoke(formatted_prompt)

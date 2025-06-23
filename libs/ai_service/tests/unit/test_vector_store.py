@@ -15,7 +15,9 @@ class TestVectorStorePG:
 
     def setup_method(self):
         """Set up test fixtures."""
-        with patch("libs.ai_service.app.rag.vector_store_pg.OpenAIEmbeddings") as mock_embeddings:
+        with patch(
+            "libs.ai_service.app.rag.vector_store_pg.OpenAIEmbeddings"
+        ) as mock_embeddings:
             self.mock_embeddings = Mock()
             mock_embeddings.return_value = self.mock_embeddings
 
@@ -65,10 +67,10 @@ class TestVectorStorePG:
         mock_result.color = "Blue"
         mock_result.product_line = "Premium"
         mock_result.environment = "internal"
-        mock_result.finish_type = "matte"
+        mock_result.finish_type = "fosco"
         mock_result.price = 89.90
-        mock_result.features = ["washable"]
-        mock_result.surface_types = ["wall"]
+        mock_result.features = ["lavável"]
+        mock_result.surface_types = ["parede"]
         mock_result.ai_summary = "Great for bedrooms"
         mock_result.usage_tags = ["bedroom"]
         mock_result.similarity_score = 0.85
@@ -100,9 +102,9 @@ class TestVectorStorePG:
         self.vector_store.search(
             query="paint",
             k=5,
-            environment="internal",
+            environment="interno",
             product_line="Premium",
-            features=["washable"],
+            features=["lavável"],
         )
 
         # Assert - should have executed query with filters
@@ -186,10 +188,10 @@ class TestVectorStorePG:
         mock_result.color = "Blue"
         mock_result.product_line = "Premium"
         mock_result.environment = "internal"
-        mock_result.finish_type = "matte"
+        mock_result.finish_type = "fosco"
         mock_result.price = 89.90
-        mock_result.features = ["washable"]
-        mock_result.surface_types = ["wall"]
+        mock_result.features = ["lavável"]
+        mock_result.surface_types = ["parede"]
         mock_result.ai_summary = "Great paint"
         mock_result.similarity_score = 0.85
 

@@ -39,9 +39,9 @@ def test_filter_paints_success(ai_client, auth_headers, mock_vector_store):
     response = ai_client.post(
         "/api/v1/filter",
         json={
-            "environment": "internal",
+            "environment": "interno",
             "product_line": "Premium",
-            "features": ["washable"],
+            "features": ["lavável"],
             "limit": 10,
         },
         headers=auth_headers,

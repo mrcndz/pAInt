@@ -31,24 +31,24 @@ class PaintSearchArgs(BaseModel):
 class PaintFilterArgs(BaseModel):
     environment: Optional[str] = Field(
         default=None,
-        description="Environment type: 'internal' for indoor use or 'external' for outdoor use",
+        description="Environment type: 'interno' for indoor use or 'externo' for outdoor use",
     )
     finish_type: Optional[str] = Field(
-        default=None, description="Finish type: 'matte', 'satin', 'gloss', etc."
+        default=None, description="Finish type: 'fosco', 'acetinado', 'brilhante', etc."
     )
     product_line: Optional[str] = Field(
-        default=None, description="Product line: 'Premium', 'Standard', etc."
+        default=None, description="Product line: 'Premium', 'Padrão', etc."
     )
     color: Optional[str] = Field(
         default=None, description="Specific color name or color family"
     )
     features: Optional[List[str]] = Field(
         default=None,
-        description="Special features like 'washable', 'anti-mold', 'antimicrobial', etc.",
+        description="Special features like 'lavável', 'antimofo', 'antimicrobiano', etc.",
     )
     surface_types: Optional[List[str]] = Field(
         default=None,
-        description="Compatible surface types like 'concrete', 'wood', 'metal', etc.",
+        description="Compatible surface types like 'parede', 'teto', 'madeira', 'metal', etc.",
     )
     limit: Optional[int] = Field(
         default=5, description="Maximum number of results to return"
@@ -99,7 +99,7 @@ class PaintRecommendationAgent:
             ),
             StructuredTool.from_function(
                 name="filter_paints",
-                description="Filter paint products by specific attributes like environment (internal/external), finish type, or product line",
+                description="Filter paint products by specific attributes like environment (interno/externo), finish type, or product line",
                 func=self._filter_paints_tool,
                 args_schema=PaintFilterArgs,
             ),
@@ -144,10 +144,12 @@ class PaintRecommendationAgent:
         Available Product Information:
         - Suvinil paint products with various colors, finishes, and features
         - Price information in Brazilian Reais (BRL)
-        - Surface compatibility (walls, ceilings, wood, metal, etc.)
-        - Environmental suitability (internal/external use)
-        - Special features (washable, anti-mold, quick-dry, etc.)
-        - Product lines (Premium, Standard, Economy, Specialty)
+        - Surface compatibility (parede, teto, madeira, metal, etc.)
+        - Environmental suitability (interno, externo)
+        - Special features (lavável, antimofo, secagem rápida, etc.)
+        - Product lines (Premium, Padrão, Econômico, Especial)
+
+        The products are available to buy in Suvinil's online or physical store if asked.
 
         Remember: You have access to search_paints, filter_paints, get_paint_details, and simulate_paint tools to help customers find exactly what they need and visualize the results.
         """
@@ -222,10 +224,15 @@ class PaintRecommendationAgent:
                 f"Successfully processed recommendation for session {session_uuid}"
             )
 
-            # Return both text response and any generated image
-            result = {"response": response["output"]}
+            # Check if response indicates max iterations reached but we have an image
+            response_text = response.get("output", "")
+            result = {"response": response_text}
+            
             if hasattr(self, "_generated_image"):
                 result["image_data"] = self._generated_image
+                # Override the error message if we successfully generated an image
+                if "Agent stopped due to max iterations" in response_text:
+                    result["response"] = "Simulação de pintura concluída com sucesso! A imagem foi gerada e está sendo retornada para visualização."
                 delattr(self, "_generated_image")
 
             return result
@@ -242,6 +249,14 @@ class PaintRecommendationAgent:
                     )
                 except:
                     pass
+
+                # Check if we have a generated image despite the error
+                result = {"response": ""}
+                if hasattr(self, "_generated_image"):
+                    result["image_data"] = self._generated_image
+                    result["response"] = "Simulação de pintura concluída com sucesso! A imagem foi gerada e está sendo retornada para visualização."
+                    delattr(self, "_generated_image")
+                    return result
 
                 return {
                     "response": (
@@ -311,9 +326,10 @@ class PaintRecommendationAgent:
 
             # Clean and validate base64 string
             try:
-                # Remove any non-ASCII characters and whitespace
+                import base64
                 import re
 
+                # Remove any non-ASCII characters and whitespace
                 image_to_use = re.sub(r"[^\x00-\x7F]+", "", image_to_use)
                 image_to_use = image_to_use.strip()
 
@@ -322,8 +338,6 @@ class PaintRecommendationAgent:
                     image_to_use = image_to_use.split(",")[1]
 
                 # Validate base64 format
-                import base64
-
                 base64.b64decode(image_to_use, validate=True)
 
             except Exception as e:

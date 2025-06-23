@@ -246,6 +246,63 @@ class ConversationManager:
 
         return session_uuid
 
+    def get_latest_session_uuid(self, user_id: int) -> Optional[str]:
+        """
+        Get the most recent session UUID for a user.
+
+        Args:
+            user_id: User ID to get latest session for
+
+        Returns:
+            Latest session UUID as string, or None if no sessions exist
+        """
+        db_session = next(get_db())
+        
+        try:
+            # Get the most recent session for this user
+            latest_session = (
+                db_session.query(ChatSessionModel)
+                .filter(ChatSessionModel.user_id == user_id)
+                .order_by(ChatSessionModel.last_activity.desc())
+                .first()
+            )
+            
+            if latest_session:
+                return str(latest_session.session_uuid)
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting latest session for user {user_id}: {e}")
+            return None
+        finally:
+            db_session.close()
+
+    def get_last_assistant_message(self, session_uuid: str, user_id: int) -> Optional[str]:
+        """
+        Get the last assistant message from a conversation session.
+        
+        Args:
+            session_uuid: Session UUID to get message from
+            user_id: User ID for security verification
+            
+        Returns:
+            Last assistant message content or None if no assistant message exists
+        """
+        try:
+            memory = self.get_memory_for_session(session_uuid, user_id)
+            
+            # Iterate backwards through messages to find last AI message
+            for message in reversed(memory.chat_memory.messages):
+                if isinstance(message, AIMessage):
+                    return message.content
+                    
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting last assistant message: {e}")
+            return None
+
     def clear_session_cache(self, session_uuid: str, user_id: int) -> None:
         """
         Remove session from in-memory cache.

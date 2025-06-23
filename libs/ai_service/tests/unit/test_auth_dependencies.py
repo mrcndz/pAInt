@@ -277,4 +277,3 @@ class TestAuthConfiguration:
             result = decode_jwt_token(soon_expire_token)
             assert result
             assert result["user_id"] == 1
-
