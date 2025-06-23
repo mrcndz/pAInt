@@ -35,6 +35,3 @@ INSERT INTO paint_products (name, color, surface_types, environment, finish_type
 ('Suvinil Econômica Branco', 'Branco', ARRAY['parede', 'teto'], 'interno', 'fosco', ARRAY['cobertura básica'], 'Econômico', 39.90),
 ('Suvinil Econômica Creme', 'Creme', ARRAY['parede'], 'interno', 'fosco', ARRAY['cobertura básica'], 'Econômico', 41.90),
 ('Suvinil Econômica Azul Claro', 'Azul Claro', ARRAY['parede'], 'interno', 'fosco', ARRAY['cobertura básica'], 'Econômico', 42.90);
-
--- Note: AI-enriched fields (ai_summary, usage_tags) will be populated by the AI service
--- during the data enrichment process (Epic 4)
