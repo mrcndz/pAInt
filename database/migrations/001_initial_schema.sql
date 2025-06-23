@@ -30,10 +30,12 @@ CREATE TABLE IF NOT EXISTS paint_products (
 
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_uuid UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     session_data JSONB DEFAULT '{}',
     last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_paint_color ON paint_products(color);
@@ -54,6 +56,7 @@ USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_activity ON chat_sessions(last_activity);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_uuid ON chat_sessions(session_uuid);
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -71,4 +74,9 @@ CREATE TRIGGER update_users_updated_at
 DROP TRIGGER IF EXISTS update_paint_products_updated_at ON paint_products;
 CREATE TRIGGER update_paint_products_updated_at 
     BEFORE UPDATE ON paint_products 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_chat_sessions_updated_at ON chat_sessions;
+CREATE TRIGGER update_chat_sessions_updated_at 
+    BEFORE UPDATE ON chat_sessions 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
