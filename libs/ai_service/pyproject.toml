@@ -26,6 +26,7 @@ dependencies = [
     "shared",
     "opencv-python-headless>=4.8.0",
     "python-multipart>=0.0.6",
+    "stability-sdk"
 ]
 
 [project.optional-dependencies]
