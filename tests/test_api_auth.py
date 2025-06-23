@@ -111,4 +111,3 @@ def test_get_current_user_no_token(api_client):
     response = api_client.get("/auth/me")
 
     assert response.status_code == 403
-
