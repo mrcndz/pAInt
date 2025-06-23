@@ -486,7 +486,7 @@ O endpoint `/api/v1/recommend` agora aceita imagens e retorna simulações visua
 
 - **Swagger UI**: Documentação interativa disponível em `/docs`
 - **ReDoc**: Documentação alternativa em `/redoc`
-- **Postman**: Coleção completa com 60+ requisições em `/postman/`
+- **Postman**: Coleção completa com várias requisições em `/postman/`
 - **Testes**: Cobertura detalhada em `/tests/` e `/libs/ai_service/tests/`
 
 ---
