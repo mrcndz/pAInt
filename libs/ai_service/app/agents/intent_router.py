@@ -88,6 +88,8 @@ class QueryRouter:
         - About application usage (lavavel, anti-mofo, etc.)
         - Location-based recommendations (kitchen, bathroom, etc.)
         - Product comparisons
+        - General statement indicating the user's intention to buy a paint product
+            - Examples: "Quero comprar"
         - Simulations of painting
             - Examples: "Como ficaria isso se fosse feito em verde?", "Como ficaria isso se fosse feito em azul?", "Como ficaria isso se fosse feito em amarelo?", "Simule", "Pode simular?"
         - Technical information about paints
@@ -110,6 +112,9 @@ class QueryRouter:
             - Examples: "Onde encontro os produtos Suvinil?", "Onde posso comprar essa tinta?"
             - Examples: "Tem essa tinta para vender em [nome da cidade]?", "Vocês têm loja física?"
             - Examples: "Vocês entregam?", "Posso comprar online?", "Ainda tem em estoque?"
+        - General expression of appreciation and gratitude
+            - Examples: "Era só isso", "Por enquanto é só", "Entendido"
+            - Examples: "Que lindo!", "Gostei!", "Adorei!"
 
 
         3. **simple_greeting**: For basic greetings like:
