@@ -1,9 +1,9 @@
 {
   "info": {
     "name": "pAInt API - Paint Recommendation System",
-    "description": "Complete API collection for testing the pAInt paint recommendation system with conversation persistence",
+    "description": "Complete API collection for testing the pAInt paint recommendation system with conversation persistence and image simulation",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "auth": {
     "type": "bearer",
@@ -42,17 +42,32 @@
                   "// Test response",
                   "pm.test('Login successful', function () {",
                   "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('access_token');",
+                  "    pm.expect(response).to.have.property('token_type');",
+                  "    pm.expect(response).to.have.property('user');",
                   "});",
                   "",
-                  "// Extract and save token",
+                  "// Extract and save token automatically",
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('access_token', response.access_token);",
-                  "    pm.collectionVariables.set('user_id', response.user.id);",
-                  "    pm.collectionVariables.set('username', response.user.username);",
                   "    ",
-                  "    console.log('Token saved:', response.access_token);",
-                  "    console.log('User ID:', response.user.id);",
+                  "    // Save to both collection and environment variables",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    pm.environment.set('access_token', response.access_token);",
+                  "    ",
+                  "    pm.collectionVariables.set('user_id', response.user.id);",
+                  "    pm.environment.set('user_id', response.user.id);",
+                  "    ",
+                  "    pm.collectionVariables.set('username', response.user.username);",
+                  "    pm.environment.set('username', response.user.username);",
+                  "    ",
+                  "    console.log('✅ Token saved successfully!');",
+                  "    console.log('🔑 Token:', response.access_token.substring(0, 20) + '...');",
+                  "    console.log('👤 User ID:', response.user.id);",
+                  "    console.log('🏷️ Username:', response.user.username);",
+                  "} else {",
+                  "    console.log('❌ Login failed - Token not saved');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -72,14 +87,63 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}"
             },
             "url": {
               "raw": "{{api_base_url}}/auth/login",
               "host": ["{{api_base_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Login with admin credentials to get JWT token"
+            "description": "Login with admin credentials to get JWT token. Token is automatically saved for other requests."
+          }
+        },
+        {
+          "name": "Login - Demo User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test response",
+                  "pm.test('Demo login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Extract and save token automatically",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    pm.environment.set('access_token', response.access_token);",
+                  "    pm.collectionVariables.set('user_id', response.user.id);",
+                  "    pm.environment.set('user_id', response.user.id);",
+                  "    console.log('✅ Demo user token saved!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo_user\",\n  \"password\": \"demo123\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base_url}}/auth/login",
+              "host": ["{{api_base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with demo user credentials"
           }
         },
         {
@@ -91,7 +155,15 @@
                 "exec": [
                   "pm.test('Token is valid', function () {",
                   "    pm.response.to.have.status(200);",
-                  "});"
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('username');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ Token is valid for user:', response.username);",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -123,14 +195,18 @@
                 "exec": [
                   "pm.test('Recommendation successful', function () {",
                   "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('response');",
+                  "    pm.expect(response).to.have.property('session_uuid');",
                   "});",
                   "",
                   "// Save session UUID for follow-up messages",
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('session_uuid', response.session_uuid);",
-                  "    console.log('Session UUID saved:', response.session_uuid);",
-                  "    console.log('AI Response:', response.response);",
+                  "    pm.environment.set('current_session_uuid', response.session_uuid);",
+                  "    console.log('💬 Session UUID saved:', response.session_uuid);",
+                  "    console.log('🤖 AI Response:', response.response.substring(0, 100) + '...');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -154,7 +230,7 @@
               "host": ["{{ai_base_url}}"],
               "path": ["api", "v1", "recommend"]
             },
-            "description": "Start a new conversation asking for bedroom paint recommendations"
+            "description": "Start a new conversation asking for bedroom paint recommendations. Uses automatic session detection."
           }
         },
         {
@@ -170,7 +246,7 @@
                   "",
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
-                  "    console.log('Follow-up response:', response.response);",
+                  "    console.log('🔄 Follow-up response:', response.response.substring(0, 100) + '...');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -208,7 +284,7 @@
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('kitchen_session_uuid', response.session_uuid);",
-                  "    console.log('Kitchen session UUID:', response.session_uuid);",
+                  "    console.log('🍳 Kitchen session UUID:', response.session_uuid);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -258,7 +334,131 @@
           }
         },
         {
-          "name": "Color Preference Query",
+          "name": "Paint Simulation with Image",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Display input image before sending the request",
+                  "const requestBody = JSON.parse(pm.request.body.raw);",
+                  "if (requestBody.image_base64) {",
+                  "    let inputTemplate = `",
+                  "    <div style='text-align: center; font-family: Arial;'>",
+                  "        <h2>📤 Input Image for Paint Simulation</h2>",
+                  "        <p><strong>Message:</strong> {{message}}</p>",
+                  "        <div style='border: 2px solid #007acc; padding: 10px; margin: 20px 0; background: #f0f8ff;'>",
+                  "            <img src='data:image/png;base64,{{inputImage}}' style='max-width: 400px; height: auto;'/>",
+                  "        </div>",
+                  "        <p><em>Original image that will be processed</em></p>",
+                  "        <p>⏳ Processing... Check the response tab after execution.</p>",
+                  "    </div>`;",
+                  "    ",
+                  "    pm.visualizer.set(inputTemplate, { ",
+                  "        inputImage: requestBody.image_base64,",
+                  "        message: requestBody.message",
+                  "    });",
+                  "    ",
+                  "    console.log('📤 Input image loaded for visualization');",
+                  "} else {",
+                  "    console.log('⚠️ No input image found in request body');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Paint simulation request processed', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('response');",
+                  "});",
+                  "",
+                  "// Get input data for comparison",
+                  "const requestBody = JSON.parse(pm.request.body.raw);",
+                  "const inputImage = requestBody.image_base64 || '';",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.image_data) {",
+                  "        console.log('🖼️ Simulation successful! Image returned.');",
+                  "        console.log('📏 Result image size:', Math.round(response.image_data.length / 1024), 'KB');",
+                  "        console.log('📏 Input image size:', Math.round(inputImage.length / 1024), 'KB');",
+                  "        ",
+                  "        // Display both input and output images for comparison",
+                  "        let template = `",
+                  "        <div style='text-align: center; font-family: Arial;'>",
+                  "            <h2>🎨 Paint Simulation - Before & After</h2>",
+                  "            <p><strong>AI Response:</strong> {{responseText}}</p>",
+                  "            ",
+                  "            <div style='display: flex; justify-content: space-around; flex-wrap: wrap; margin: 20px 0;'>",
+                  "                <div style='flex: 1; min-width: 300px; margin: 10px;'>",
+                  "                    <h3>📤 Input Image</h3>",
+                  "                    <div style='border: 2px solid #007acc; padding: 10px; background: #f0f8ff;'>",
+                  "                        <img src='data:image/png;base64,{{inputImage}}' style='max-width: 100%; height: auto;'/>",
+                  "                    </div>",
+                  "                    <p><em>Original image</em></p>",
+                  "                </div>",
+                  "                ",
+                  "                <div style='flex: 1; min-width: 300px; margin: 10px;'>",
+                  "                    <h3>🎨 Simulated Result</h3>",
+                  "                    <div style='border: 2px solid #28a745; padding: 10px; background: #f8fff8;'>",
+                  "                        <img src='data:image/png;base64,{{outputImage}}' style='max-width: 100%; height: auto;'/>",
+                  "                    </div>",
+                  "                    <p><em>After paint simulation</em></p>",
+                  "                </div>",
+                  "            </div>",
+                  "            ",
+                  "            <div style='margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;'>",
+                  "                <h4>📊 Comparison Details</h4>",
+                  "                <p><strong>Message:</strong> {{message}}</p>",
+                  "                <p><strong>Input Size:</strong> {{inputSize}} KB</p>",
+                  "                <p><strong>Output Size:</strong> {{outputSize}} KB</p>",
+                  "            </div>",
+                  "        </div>`;",
+                  "        ",
+                  "        pm.visualizer.set(template, { ",
+                  "            inputImage: inputImage,",
+                  "            outputImage: response.image_data,",
+                  "            responseText: response.response,",
+                  "            message: requestBody.message,",
+                  "            inputSize: Math.round(inputImage.length / 1024),",
+                  "            outputSize: Math.round(response.image_data.length / 1024)",
+                  "        });",
+                  "    } else {",
+                  "        console.log('⚠️ No image returned in simulation');",
+                  "        ",
+                  "        // Show input image and response even without output image",
+                  "        let template = `",
+                  "        <div style='text-align: center; font-family: Arial;'>",
+                  "            <h2>📤 Input Image & AI Response</h2>",
+                  "            <p><strong>AI Response:</strong> {{responseText}}</p>",
+                  "            ",
+                  "            <div style='border: 2px solid #007acc; padding: 10px; margin: 20px 0; background: #f0f8ff;'>",
+                  "                <h3>📤 Input Image</h3>",
+                  "                <img src='data:image/png;base64,{{inputImage}}' style='max-width: 100%; height: auto;'/>",
+                  "            </div>",
+                  "            ",
+                  "            <div style='margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;'>",
+                  "                <p>⚠️ No simulation image was generated</p>",
+                  "            </div>",
+                  "        </div>`;",
+                  "        ",
+                  "        pm.visualizer.set(template, { ",
+                  "            inputImage: inputImage,",
+                  "            responseText: response.response",
+                  "        });",
+                  "    }",
+                  "    console.log('🤖 Response:', response.response);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -269,18 +469,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"message\": \"Que cores você recomenda para uma sala de estar moderna? Quero algo elegante.\",\n  \"session_uuid\": null\n}"
+              "raw": "{\n  \"message\": \"Simule como ficaria a cor Vermelho Paixão da Suvinil nesta parede\",\n  \"session_uuid\": null,\n  \"image_base64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}"
             },
             "url": {
               "raw": "{{ai_base_url}}/api/v1/recommend",
               "host": ["{{ai_base_url}}"],
               "path": ["api", "v1", "recommend"]
             },
-            "description": "Ask for color recommendations for modern living room"
+            "description": "Test paint simulation with a sample image (1x1 pixel PNG for testing). Replace image_base64 with real image data."
           }
         }
       ],
-      "description": "AI-powered paint recommendation endpoints with conversation persistence"
+      "description": "AI-powered paint recommendation endpoints with conversation persistence and image simulation"
     },
     {
       "name": "Session Management",
@@ -294,11 +494,17 @@
                 "exec": [
                   "pm.test('Sessions retrieved', function () {",
                   "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('sessions');",
+                  "    pm.expect(response).to.have.property('total_sessions');",
                   "});",
                   "",
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
-                  "    console.log('User sessions:', response);",
+                  "    console.log('📊 Total sessions:', response.total_sessions);",
+                  "    if (response.sessions.length > 0) {",
+                  "        console.log('📝 Latest session preview:', response.sessions[0].preview);",
+                  "    }",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -329,7 +535,7 @@
                   "",
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
-                  "    console.log('Session reset:', response);",
+                  "    console.log('🔄 Session reset:', response.message);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -346,7 +552,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"session_uuid\": \"{{session_uuid}}\"\n}"
+              "raw": "\"{{session_uuid}}\""
             },
             "url": {
               "raw": "{{ai_base_url}}/api/v1/chat/reset",
@@ -381,7 +587,7 @@
               "host": ["{{ai_base_url}}"],
               "path": ["api", "v1", "search"]
             },
-            "description": "Direct search for blue paint products"
+            "description": "Direct semantic search for blue paint products using Portuguese terms"
           }
         },
         {
@@ -396,14 +602,36 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"environment\": \"internal\",\n  \"product_line\": \"Premium\",\n  \"features\": [\"washable\", \"anti-mold\"],\n  \"limit\": 10\n}"
+              "raw": "{\n  \"environment\": \"interno\",\n  \"product_line\": \"Premium\",\n  \"features\": [\"lavável\", \"antimofo\"],\n  \"limit\": 10\n}"
             },
             "url": {
               "raw": "{{ai_base_url}}/api/v1/filter",
               "host": ["{{ai_base_url}}"],
               "path": ["api", "v1", "filter"]
             },
-            "description": "Filter paints by specific criteria"
+            "description": "Filter paints by specific criteria using Portuguese terms"
+          }
+        },
+        {
+          "name": "Filter - External Paints",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"environment\": \"externo\",\n  \"finish_type\": \"semi-brilho\",\n  \"limit\": 5\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/filter",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "filter"]
+            },
+            "description": "Filter external paints with semi-gloss finish"
           }
         }
       ],
@@ -414,6 +642,25 @@
       "item": [
         {
           "name": "API Service Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API Service is healthy', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.status).to.eql('healthy');",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    console.log('✅ API Service is healthy');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "noauth"
@@ -430,6 +677,23 @@
         },
         {
           "name": "AI Service Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('AI Service is healthy', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    console.log('✅ AI Service is healthy');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "noauth"
@@ -446,6 +710,28 @@
         },
         {
           "name": "AI Service Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('AI Service status retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('service');",
+                  "    pm.expect(response).to.have.property('capabilities');",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('🚀 Service:', response.service);",
+                  "    console.log('⚡ Capabilities:', response.capabilities.join(', '));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -454,7 +740,7 @@
               "host": ["{{ai_base_url}}"],
               "path": ["api", "v1", "status"]
             },
-            "description": "Get AI service detailed status"
+            "description": "Get AI service detailed status and capabilities"
           }
         }
       ],
@@ -474,7 +760,7 @@
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('persistence_test_session', response.session_uuid);",
-                  "    console.log('Persistence test session:', response.session_uuid);",
+                  "    console.log('🧪 Persistence test session:', response.session_uuid);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -544,9 +830,53 @@
             },
             "description": "Test if AI remembers previous recommendations in same session"
           }
+        },
+        {
+          "name": "Test 4: Auto Session Detection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Auto session detection works', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    // Should use existing session if session_uuid is null",
+                  "    pm.expect(response).to.have.property('session_uuid');",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('🔄 Auto-detected session:', response.session_uuid);",
+                  "    console.log('🤖 Response:', response.response.substring(0, 100) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Você se lembra de mim? Estávamos falando sobre tintas para escritório.\",\n  \"session_uuid\": null\n}"
+            },
+            "url": {
+              "raw": "{{ai_base_url}}/api/v1/recommend",
+              "host": ["{{ai_base_url}}"],
+              "path": ["api", "v1", "recommend"]
+            },
+            "description": "Test automatic session detection when session_uuid is null"
+          }
         }
       ],
-      "description": "Specific tests for conversation persistence and memory functionality"
+      "description": "Comprehensive tests for conversation persistence and memory functionality"
     }
   ],
   "variable": [
@@ -558,6 +888,16 @@
     {
       "key": "ai_base_url", 
       "value": "http://localhost:8001",
+      "type": "string"
+    },
+    {
+      "key": "admin_username",
+      "value": "admin",
+      "type": "string"
+    },
+    {
+      "key": "admin_password",
+      "value": "admin123",
       "type": "string"
     },
     {
