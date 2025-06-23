@@ -17,7 +17,7 @@ services:
     networks:
       - paint_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-paint_user}"]
+      test: ["CMD-SHELL", "pg_isready -U paint_user -d paint_catalog || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,6 +32,8 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-paint_user}:${POSTGRES_PASSWORD:-paint_password}@postgres:5432/${POSTGRES_DB:-paint_catalog}
       - JWT_SECRET=${JWT_SECRET:-super-secret-jwt-key}
       - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DOCKER_ENV=true
+      - POSTGRES_HOST=postgres
     ports:
       - "8000:8000"
     depends_on:
@@ -42,7 +44,12 @@ services:
     volumes:
        - ./libs/api:/app
        - ./libs/shared:/app/shared
-    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+       - ./database:/app/database
+    command: >
+      sh -c "
+        POSTGRES_HOST=postgres python /app/database/init_db.py &&
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
 
   # AI Service
   ai-service:
