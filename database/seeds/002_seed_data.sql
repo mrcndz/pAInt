@@ -4,7 +4,8 @@
 -- Insert sample users
 INSERT INTO users (username, email, password_hash, role) VALUES
 ('admin', 'admin@paint.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeyFwtO4rZpgqB1Wa', 'admin'), -- password: admin123
-('demo_user', 'demo@paint.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeyFwtO4rZpgqB1Wa', 'user'); -- password: demo123
+('demo_user', 'demo@paint.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeyFwtO4rZpgqB1Wa', 'user') -- password: demo123
+ON CONFLICT (username) DO NOTHING;
 
 -- Insert sample paint products (Suvinil-inspired catalog) with Portuguese features
 INSERT INTO paint_products (name, color, surface_types, environment, finish_type, features, product_line, price) VALUES
