@@ -20,6 +20,7 @@ A solução adota uma **arquitetura de microsserviços** com separação clara d
   - Busca semântica com embeddings OpenAI
   - Gerenciamento de conversas com persistência de sessão
   - Pipeline RAG para recuperação aumentada de informações
+  - Limite de mensagens e tokens por conversa
 
 #### 🏗️ **API Service** (Porta 8000)
 - **Responsabilidade**: CRUD de tintas, gerenciamento de usuários e autenticação JWT
@@ -99,9 +100,12 @@ JWT_SECRET=seu-jwt-secret-super-seguro
 docker-compose up -d
 ```
 
-5. (Opcional) Caso queira desenvolver localmente
+5. (Opcional) Caso queira desenvolver localmente e omitir errros de importação
 ```bash
+# Depois de criar um ambiente virtual, instale as dependências
+pip install -r requirements.txt
 ```
+* O projeto no docker possui hot-reload, portanto, as alterações no código serão automaticamente aplicadas.
 
 ### Acesso aos Serviços
 
@@ -181,7 +185,7 @@ A coleção inclui configurações de ambiente pré-definidas e scripts de autom
 ### Cobertura de Testes
 
 O projeto possui **testes abrangentes** que cobrem:
-- ✅ **Testes unitários** dos agentes de IA (60+ testes)
+- ✅ **Testes unitários** dos agentes de IA
 - ✅ **Testes de integração** da API
 - ✅ **Testes de autenticação** e autorização
 - ✅ **Testes do pipeline RAG** e vector store
@@ -192,7 +196,7 @@ O projeto possui **testes abrangentes** que cobrem:
 
 ### **LLMs e LangChain**
 O sistema utiliza **LangChain** como framework orquestrador para conectar-se com o modelo **GPT-3.5-turbo** da OpenAI. A LangChain gerencia o fluxo de conversação, o histórico de mensagens e a execução de ferramentas (tools) pelos agentes. O pipeline implementa padrões avançados como:
-- **Memory Management**: Conversas persistem entre sessões
+- **Memory Management**: Conversas persistem entre sessões com limite de mensagens
 - **Tool Usage**: Agentes utilizam ferramentas especializadas para busca e filtros
 - **Error Handling**: Tratamento robusto de erros e timeouts
 - **Template Management**: Prompts estruturados com placeholders dinâmicos
@@ -322,10 +326,9 @@ POST /api/v1/recommend
 ### **Tecnologias Utilizadas**
 
 #### 🔧 **Pipeline de Processamento**
-- **OpenAI GPT-4o**: Análise automática de cores e contexto da imagem
+- **OpenAI GPT**: Análise de contexto e geração de resumos
+  - **Tradução Automática**: Converte descrições em português para inglês (requisito da Stability AI)
 - **Stability AI (SDXL)**: Geração de alta qualidade da simulação de pintura
-- **OpenCV**: Processamento de imagem e mascaramento inteligente
-- **Tradução Automática**: Converte descrições em português para inglês (requisito da Stability AI)
 
 #### 💡 **Otimizações Inteligentes**
 - **Zero Tokens para Imagens**: Imagens não são enviadas para o contexto do LLM, economizando custos
@@ -402,7 +405,7 @@ Para acelerar o desenvolvimento e seguir as boas práticas sugeridas, foram util
 
 ### **Exemplos de Prompts Usados**
 
-Os exemplos detalhados de prompts utilizados durante o desenvolvimento estão documentados no arquivo **[prompt_examples.md](./prompt_examples.md)**, incluindo prompts para arquitetura, implementação RAG, testes e otimizações.
+Os exemplos detalhados de prompts utilizados durante o desenvolvimento estão documentados no arquivo **[prompt_examples.md](./prompt_examples.md)**.
 
 ### **Tomada de Decisão com Base nas Sugestões**
 Todo código gerado por IA foi cuidadosamente **revisado, testado e adaptado** ao contexto específico da arquitetura do projeto. As ferramentas de IA serviram como um "copiloto inteligente" para:
@@ -459,14 +462,16 @@ Para o gerenciamento das atividades do projeto, foi utilizada a ferramenta **Not
 - `POST /api/v1/recommend` - Obter recomendação via agente IA (com simulação visual opcional)
 - `POST /search` - Busca semântica direta
 - `GET /health` - Status de saúde dos serviços
+- `POST /ap1/v1/admin/embeddings/populate` - Gerar e popular embeddings de produtos
+- `POST /ap1/v1/admin/enrich/all` - Gerar resumos inteligentes de produtos
 
 #### **Simulação Visual Integrada**
-O endpoint `/api/v1/recommend` agora aceita imagens e retorna simulações visuais:
+O endpoint `/api/v1/recommend` aceita imagens e retorna simulações visuais:
 ```json
 {
   "message": "Como ficaria em azul?",
-  "image_base64": "data:image/jpeg;base64,/9j/4AAQ...",
-  "session_uuid": "opcional"
+  "image_base64": "/9j/4AAQ...",
+  "session_uuid": null
 }
 ```
 
