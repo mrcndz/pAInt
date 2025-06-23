@@ -14,12 +14,12 @@ from .responses import (
 
 __all__ = [
     "EmbeddingRequest",
-    "FilterRequest", 
+    "FilterRequest",
     "RecommendationRequest",
     "SearchRequest",
     "ChatSessionInfo",
     "ProductResponse",
-    "RecommendationResponse", 
+    "RecommendationResponse",
     "SearchResponse",
     "UserSessionsResponse",
 ]

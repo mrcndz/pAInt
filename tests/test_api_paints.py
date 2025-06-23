@@ -23,7 +23,7 @@ def test_get_paints_success(api_client, auth_headers):
                 price=Decimal(str(50.0)),
                 surface_types=[],
                 environment=Environment.INTERNAL,
-                finish_type="matte",
+                finish_type="fosco",
                 features=[],
                 product_line="Premium",
                 usage_tags=[],
@@ -35,7 +35,7 @@ def test_get_paints_success(api_client, auth_headers):
                 price=Decimal(str(60.0)),
                 surface_types=[],
                 environment=Environment.INTERNAL,
-                finish_type="matte",
+                finish_type="fosco",
                 features=[],
                 product_line="Premium",
                 usage_tags=[],
@@ -251,4 +251,3 @@ def test_delete_paint_not_found(api_client, auth_headers):
 
             # May fail due to auth or return not found
             assert response.status_code in [401, 403, 404]
-

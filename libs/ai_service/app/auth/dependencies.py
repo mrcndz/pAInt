@@ -175,4 +175,3 @@ def get_optional_current_user_id(
 
     except Exception:
         return None
-

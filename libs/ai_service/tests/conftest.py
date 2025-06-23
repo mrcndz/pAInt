@@ -68,8 +68,8 @@ def mock_vector_store():
             "environment": "internal",
             "finish_type": "matte",
             "price": 89.90,
-            "features": ["washable", "anti-mold"],
-            "surface_types": ["wall", "ceiling"],
+            "features": ["lavável", "antimofo"],
+            "surface_types": ["parede", "teto"],
             "ai_summary": "Perfect for bedrooms",
             "relevance_score": 0.95,
         }
@@ -108,8 +108,8 @@ def sample_paint_data():
         "environment": "internal",
         "finish_type": "matte",
         "price": 89.90,
-        "features": ["washable", "anti-mold"],
-        "surface_types": ["wall", "ceiling"],
+        "features": ["lavável", "antimofo"],
+        "surface_types": ["parede", "teto"],
         "ai_summary": "Uma tinta azul suave, perfeita para ambientes que buscam tranquilidade",
         "usage_tags": ["quarto", "relaxante", "interno"],
     }
@@ -132,4 +132,3 @@ def mock_get_db():
         mock_session = Mock()
         mock.return_value = iter([mock_session])
         yield mock
-

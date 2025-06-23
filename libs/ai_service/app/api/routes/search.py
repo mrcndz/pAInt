@@ -100,4 +100,3 @@ async def filter_products(
     except Exception as e:
         logger.error(f"Error in filter endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Filter failed: {str(e)}")
-

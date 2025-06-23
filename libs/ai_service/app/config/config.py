@@ -18,12 +18,14 @@ class Config:
     DEBUG = os.getenv("DEBUG", "True").lower() == "true"
     MAX_TOKENS = int(os.getenv("MAX_TOKENS", 150))
     TEMPERATURE = float(os.getenv("TEMPERATURE", 0.7))
-    
+
     # Chat & Conversation Limits
-    AGENT_MAX_ITERATIONS = int(os.getenv("AGENT_MAX_ITERATIONS", 6))
-    AGENT_MAX_EXECUTION_TIME = int(os.getenv("AGENT_MAX_EXECUTION_TIME", 30))
+    AGENT_MAX_ITERATIONS = int(os.getenv("AGENT_MAX_ITERATIONS", 10))
+    AGENT_MAX_EXECUTION_TIME = int(os.getenv("AGENT_MAX_EXECUTION_TIME", 60))
     CONVERSATION_MAX_CACHE_SIZE = int(os.getenv("CONVERSATION_MAX_CACHE_SIZE", 100))
-    CONVERSATION_MAX_USER_SESSIONS = int(os.getenv("CONVERSATION_MAX_USER_SESSIONS", 50))
+    CONVERSATION_MAX_USER_SESSIONS = int(
+        os.getenv("CONVERSATION_MAX_USER_SESSIONS", 50)
+    )
 
     @classmethod
     def validate(cls):

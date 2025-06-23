@@ -8,9 +8,9 @@ from typing import List, Optional
 class Environment(str, Enum):
     """Paint environment suitability."""
 
-    INTERNAL = "internal"
-    EXTERNAL = "external"
-    BOTH = "both"
+    INTERNAL = "interno"
+    EXTERNAL = "externo"
+    BOTH = "ambos"
 
 
 class Role(str, Enum):
@@ -77,4 +77,3 @@ class ChatSession:
     session_data: dict = field(default_factory=dict)
     last_activity: Optional[datetime] = None
     created_at: Optional[datetime] = None
-
